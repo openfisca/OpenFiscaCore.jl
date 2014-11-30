@@ -20,25 +20,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-module OpenFiscaCore
+export Simulation
 
 
-using Dates
+type Simulation
+  tax_benefit_system::TaxBenefitSystem
+  period::DatePeriod
+  entity_by_name::Dict{String, Entity}
+  variable_by_name::Dict{String, Variable}
 
-import Base: *, +, .<, isfinite, length, next, real, start
+  Simulation(tax_benefit_system, period, variable_by_name) = new(
+    tax_benefit_system,
+    period,
+    [
+      name => Entity(entity_definition, 0)
+      for (name, entity_definition) in tax_benefit_system.entity_definition_by_name
+    ],
+    variable_by_name,
+  )
+end
 
-
-abstract Variable  # Used only to avoid circular references between Simulation & Variable types
-
-
-include("entities.jl")
-include("periods.jl")
-include("arrays.jl")
-include("period_arrays.jl")
-include("variable_definitions.jl")
-include("tax_benefit_systems.jl")
-include("simulations.jl")
-include("variables.jl")
-
-
-end # module
+Simulation(tax_benefit_system, period) = Simulation(tax_benefit_system, period, Dict{String, Variable}())

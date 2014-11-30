@@ -20,25 +20,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-module OpenFiscaCore
-
-
-using Dates
-
-import Base: *, +, .<, isfinite, length, next, real, start
-
-
-abstract Variable  # Used only to avoid circular references between Simulation & Variable types
-
-
-include("entities.jl")
-include("periods.jl")
-include("arrays.jl")
-include("period_arrays.jl")
-include("variable_definitions.jl")
-include("tax_benefit_systems.jl")
-include("simulations.jl")
-include("variables.jl")
-
-
-end # module
+# export Day, Month, Year
+#
+#
+# convert(::Type{Day}, array::Array{Date}) = Array{Day}[
+#   Day(date)
+#   for date in array
+# ]
+#
+#
+# convert(::Type{Month}, array::Array{Date}) = Array{Month}[
+#   Month(date)
+#   for date in array
+# ]
+#
+#
+# convert(::Type{Year}, array::Array{Date}) = Array{Year}[
+#   Year(date)
+#   for date in array
+# ]

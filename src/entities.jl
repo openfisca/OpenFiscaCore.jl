@@ -20,25 +20,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-module OpenFiscaCore
+export Entity, EntityDefinition
 
 
-using Dates
-
-import Base: *, +, .<, isfinite, length, next, real, start
-
-
-abstract Variable  # Used only to avoid circular references between Simulation & Variable types
+type EntityDefinition
+  name::String
+  # key_plural::String
+end
 
 
-include("entities.jl")
-include("periods.jl")
-include("arrays.jl")
-include("period_arrays.jl")
-include("variable_definitions.jl")
-include("tax_benefit_systems.jl")
-include("simulations.jl")
-include("variables.jl")
-
-
-end # module
+type Entity
+  definition::EntityDefinition
+  count::Unsigned
+end

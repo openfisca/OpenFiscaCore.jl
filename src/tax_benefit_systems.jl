@@ -20,25 +20,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-module OpenFiscaCore
+export TaxBenefitSystem
 
 
-using Dates
+type TaxBenefitSystem
+  entity_definition_by_name::Dict{String, EntityDefinition}
+  variable_definition_by_name::Dict{String, VariableDefinition}
 
-import Base: *, +, .<, isfinite, length, next, real, start
-
-
-abstract Variable  # Used only to avoid circular references between Simulation & Variable types
-
-
-include("entities.jl")
-include("periods.jl")
-include("arrays.jl")
-include("period_arrays.jl")
-include("variable_definitions.jl")
-include("tax_benefit_systems.jl")
-include("simulations.jl")
-include("variables.jl")
-
-
-end # module
+  function TaxBenefitSystem(entities_definition, variables_definition)
+    new(
+      [
+        entity_definition.name => entity_definition
+        for entity_definition in entities_definition
+      ],
+      [
+        variable_definition.name => variable_definition
+        for variable_definition in variables_definition
+      ],
+    )
+  end
+end

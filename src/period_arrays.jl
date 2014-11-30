@@ -20,25 +20,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-module OpenFiscaCore
+export *, +, .<, length, next, PeriodArray, start
 
 
-using Dates
-
-import Base: *, +, .<, isfinite, length, next, real, start
-
-
-abstract Variable  # Used only to avoid circular references between Simulation & Variable types
+type PeriodArray
+  period::DatePeriod
+  array::Array
+end
 
 
-include("entities.jl")
-include("periods.jl")
-include("arrays.jl")
-include("period_arrays.jl")
-include("variable_definitions.jl")
-include("tax_benefit_systems.jl")
-include("simulations.jl")
-include("variables.jl")
-
-
-end # module
+*(period_array::PeriodArray, right) = period_array.array * right
++(period_array::PeriodArray, right) = period_array.array + right
+.<(period_array::PeriodArray, right::Number) = period_array.array .< right
+length(period_array::PeriodArray) = length(period_array.array)
+next(period_array::PeriodArray, state) = next(period_array.array, state)
+start(period_array::PeriodArray) = start(period_array.array)

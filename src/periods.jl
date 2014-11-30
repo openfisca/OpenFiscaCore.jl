@@ -20,25 +20,38 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-module OpenFiscaCore
+export DatePeriod, DayPeriod, isfinite, MonthPeriod, real, YearPeriod
 
 
-using Dates
-
-import Base: *, +, .<, isfinite, length, next, real, start
+abstract DatePeriod
 
 
-abstract Variable  # Used only to avoid circular references between Simulation & Variable types
+immutable DayPeriod <: DatePeriod
+  start::Date
+  length::Unsigned
+end
+
+DayPeriod(start::Integer, length) = DayPeriod(Date(start), length)
+DayPeriod(start) = DayPeriod(start, 1)
 
 
-include("entities.jl")
-include("periods.jl")
-include("arrays.jl")
-include("period_arrays.jl")
-include("variable_definitions.jl")
-include("tax_benefit_systems.jl")
-include("simulations.jl")
-include("variables.jl")
+immutable MonthPeriod <: DatePeriod
+  start::Date
+  length::Unsigned
+end
+
+MonthPeriod(start::Integer, length) = MonthPeriod(Date(start), length)
+MonthPeriod(start) = MonthPeriod(start, 1)
 
 
-end # module
+immutable YearPeriod <: DatePeriod
+  start::Date
+  length::Unsigned
+end
+
+YearPeriod(start::Integer, length) = YearPeriod(Date(start), length)
+YearPeriod(start) = YearPeriod(start, 1)
+
+
+isfinite(::Period) = true
+real(period::Period) = real(int(period))
