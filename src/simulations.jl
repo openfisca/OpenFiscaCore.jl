@@ -20,24 +20,53 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-export Simulation
-
-
-type Simulation
+type Simulation <: AbstractSimulation
   tax_benefit_system::TaxBenefitSystem
   period::DatePeriod
   entity_by_name::Dict{String, Entity}
   variable_by_name::Dict{String, Variable}
 
-  Simulation(tax_benefit_system, period, variable_by_name) = new(
-    tax_benefit_system,
-    period,
-    [
-      name => Entity(entity_definition, 0)
+  function Simulation(tax_benefit_system, period, variable_by_name)
+    simulation = new(tax_benefit_system, period, Dict{String, Entity}(), variable_by_name)
+    simulation.entity_by_name = [
+      name => Entity(simulation, entity_definition)
       for (name, entity_definition) in tax_benefit_system.entity_definition_by_name
-    ],
-    variable_by_name,
-  )
+    ]
+    return simulation
+  end
 end
 
 Simulation(tax_benefit_system, period) = Simulation(tax_benefit_system, period, Dict{String, Variable}())
+
+
+get_array_handle(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),
+  default)
+
+get_array_handle(simulation::Simulation, variable_name, period, default) = get_array_handle(
+  get_variable!(simulation, variable_name), period, default)
+
+
+get_entity(simulation::Simulation, definition::EntityDefinition) = simulation.entity_by_name[definition.name]
+
+get_entity(simulation::Simulation, name::String) = simulation.entity_by_name[name]
+
+
+get_person(simulation::Simulation) = get_entity(simulation, simulation.tax_benefit_system.person_name)
+
+
+function get_variable!(simulation::Simulation, variable_name)
+  get!(simulation.variable_by_name, variable_name) do
+    definition = simulation.tax_benefit_system.variable_definition_by_name[variable_name]
+    return (definition.permanent ? PermanentVariable : PeriodicVariable)(simulation, definition)
+  end
+end
+
+
+set_array_handle(simulation::Simulation, variable_name, period::DatePeriod, array::Array) = set_array_handle(
+  get_variable!(simulation, variable_name), period, array)
+
+set_array_handle(simulation::Simulation, variable_name, array_handle::ArrayHandle) = set_array_handle(
+  get_variable!(simulation, variable_name), array_handle)
+
+set_array_handle(simulation::Simulation, variable_name, array::Array) = set_array_handle(
+  get_variable!(simulation, variable_name), array)

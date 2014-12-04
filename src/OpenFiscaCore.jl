@@ -23,18 +23,22 @@
 module OpenFiscaCore
 
 
+export *, +, .<, @calculate, @get_array_handle, BareVariableDefinition, beginswith, calculate, DatePeriod, DayPeriod, Entity, entity_to_person, EntityDefinition, FormulaDefinition, get_array_handle, get_entity, get_variable!,isfinite, length, MonthPeriod, next, PeriodArrayHandle, PermanentArrayHandle, PeriodicVariable, PermanentVariable, real, Role, set_array_handle, Simulation, start, TaxBenefitSystem, VariableDefinition, YearPeriod
+
+
 using Dates
 
-import Base: *, +, .<, isfinite, length, next, real, start
+import Base: *, +, .<, beginswith, done, isfinite, length, next, real, start
 
 
-abstract Variable  # Used only to avoid circular references between Simulation & Variable types
+abstract AbstractSimulation
+abstract Variable
 
 
 include("entities.jl")
 include("periods.jl")
 include("arrays.jl")
-include("period_arrays.jl")
+include("array_handles.jl")
 include("variable_definitions.jl")
 include("tax_benefit_systems.jl")
 include("simulations.jl")

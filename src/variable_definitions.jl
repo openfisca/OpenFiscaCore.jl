@@ -20,9 +20,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-export BareVariableDefinition, FormulaDefinition, VariableDefinition
-
-
 abstract VariableDefinition
 
 
@@ -30,12 +27,27 @@ type BareVariableDefinition <: VariableDefinition
   name::String
   entity_definition::EntityDefinition
   cell_type::Type
+  cell_default
   label::String
   permanent::Bool  # When true, value of variable doesn't depend from date (example: ID, birth)
-end
 
-BareVariableDefinition(name, entity_definition, cell_type; label = name, permanent = false) = BareVariableDefinition(
-  name, entity_definition, cell_type, label, permanent)
+  function BareVariableDefinition(name, entity_definition, cell_type; cell_default = nothing, label = name,
+      permanent = false)
+    if cell_default === nothing
+      cell_default =
+        cell_type <: Date ? Date(1970, 1, 1) :
+        cell_type <: Real ? 0.0 :
+        cell_type <: Int ? 0 :
+        cell_type <: Month ? 0 :
+        cell_type <: Role ? Role(0) :
+        cell_type <: String ? "" :
+        cell_type <: Unsigned ? 0 :
+        cell_type <: Year ? 0 :
+        error("Unknown default for type ", cell_type)
+    end
+    return new(name, entity_definition, cell_type, cell_default, label, permanent)
+  end
+end
 
 
 type FormulaDefinition <: VariableDefinition

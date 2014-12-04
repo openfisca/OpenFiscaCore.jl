@@ -20,16 +20,41 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-export Entity, EntityDefinition
-
-
 type EntityDefinition
   name::String
+  index_variable_name::String  # Not used for persons
+  role_variable_name::String  # Not used for persons
+  is_person::Bool
   # key_plural::String
+
+  EntityDefinition(name; index_variable_name = "", role_variable_name = "", is_person = false) = new(name,
+    index_variable_name, role_variable_name, is_person)
 end
 
 
 type Entity
+  simulation::AbstractSimulation
   definition::EntityDefinition
   count::Unsigned
+  roles_count::Unsigned  # Not used for persons
+  step_size::Unsigned
+
+  Entity(simulation::AbstractSimulation, definition::EntityDefinition) = new(simulation, definition, 0, 0, 0)
 end
+
+
+immutable Role
+  value::Int8
+end
+
+
+ALL_ROLES = [Role(0)]
+
+
+get_index_variable(entity::Entity) = get_variable!(entity.simulation, entity.definition.index_variable_name)
+
+
+get_role_variable(entity::Entity) = get_variable!(entity.simulation, entity.definition.role_variable_name)
+
+
+is_person(entity::Entity) = entity.definition.is_person

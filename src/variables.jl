@@ -20,17 +20,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-export @calculate, calculate, @get_period_array, calculate, ConcreteVariable, get_array, get_period_array,
-  get_variable!, PermanentVariable, set_array, set_period_array
-
-
-type ConcreteVariable <: Variable
-  simulation::Simulation
+type PeriodicVariable <: Variable
+  simulation::AbstractSimulation
   definition::VariableDefinition
   array_by_period::Dict{DatePeriod, Array}
 end
 
-ConcreteVariable(simulation, definition) = ConcreteVariable(simulation, definition, Dict{DatePeriod, Array}())
+PeriodicVariable(simulation, definition) = PeriodicVariable(simulation, definition, Dict{DatePeriod, Array}())
 
 
 type PermanentVariable <: Variable
@@ -43,17 +39,20 @@ end
 PermanentVariable(simulation, definition) = PermanentVariable(simulation, definition, [])
 
 
-function calculate(variable::ConcreteVariable, period)
+function calculate(variable::PeriodicVariable, period)
   array = get!(variable.array_by_period, period) do
     definition = variable.definition
     if isa(definition, FormulaDefinition)
-      period_array = definition.func(variable, period)
-      @assert isa(period_array, PeriodArray)
-      return period_array.array
+      array_handle = definition.func(variable, period)
+      @assert isa(array_handle, PeriodArrayHandle)
+      return array_handle.array
     end
-    return zeros(definition.cell_type, entity(variable).count)
+    array = Array(definition.cell_type, get_entity(variable).count)
+    fill!(array, definition.cell_default)
+    set_array_handle(variable, period, array)
+    return array
   end
-  return PeriodArray(period, array)
+  return PeriodArrayHandle(variable, period, array)
 end
 
 function calculate(variable::PermanentVariable, period)
@@ -61,16 +60,18 @@ function calculate(variable::PermanentVariable, period)
   if isempty(array)
     definition = variable.definition
     if isa(definition, FormulaDefinition)
-      array = definition.func(variable, period)
-      @assert isa(array, Array)
+      array_handle = definition.func(variable, period)
+      @assert isa(array_handle, PermanentArrayHandle)
     else
-      array = zeros(definition.cell_type, entity(variable).count)
+      array = Array(definition.cell_type, get_entity(variable).count)
+      fill!(array, definition.cell_default)
+      set_array_handle(variable, array)
     end
   end
-  return array
+  return PermanentArrayHandle(variable, array)
 end
 
-# calculate(variable::Variable) = calculate(variable, variable.simulation.period)
+calculate(variable::Variable) = calculate(variable, variable.simulation.period)
 
 calculate(simulation::Simulation, variable_name, period) = calculate(
   get_variable!(simulation, variable_name), period)
@@ -85,68 +86,55 @@ macro calculate(new_variable, period)
 end
 
 
-entity(variable::Variable) = variable.simulation.entity_by_name[variable.definition.entity_definition.name]
-
-
-function get_array(variable::PermanentVariable, default)
-  array = variable.array
-  return isempty(array) ? default : array
-end
-
-get_array(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name), default)
-
-
-function get_period_array(variable::ConcreteVariable, period, default)
+function get_array_handle(variable::PeriodicVariable, period, default)
   array = get(variable.array_by_period, period, nothing)
-  return array === nothing ? default : PeriodArray(period, array)
+  return array === nothing ? default : PeriodArrayHandle(variable, period, array)
 end
 
-get_period_array(variable::PermanentVariable, period, default) = get_array(variable, default)
+get_array_handle(variable::PeriodicVariable, default) = get_array(variable, variable.simulation.period, default)
 
-get_period_array(variable::Variable, default) = get_array(variable, variable.simulation.period, default)
+function get_array_handle(variable::PermanentVariable, default)
+  array = variable.array
+  return isempty(array) ? default : PermanentArrayHandle(variable, array)
+end
 
-get_period_array(simulation::Simulation, variable_name, period, default) = get_period_array(
-  get_variable!(simulation, variable_name), period, default)
-
-get_period_array(simulation::Simulation, variable_name, default) = get_period_array(
-  get_variable!(simulation, variable_name), simulation.period, default)
+get_array_handle(variable::PermanentVariable, period, default) = get_array_handle(variable, default)
 
 
-macro get_period_array(new_variable, period, default)
+macro get_array_handle(new_variable, period, default)
   global variable
-  return esc(:($new_variable = get_period_array(variable.simulation, $(string(new_variable)), $period, $default)))
+  return esc(:($new_variable = get_array_handle(variable.simulation, $(string(new_variable)), $period, $default)))
 end
 
 
-function get_variable!(simulation::Simulation, variable_name)
-  get!(simulation.variable_by_name, variable_name) do
-    definition = simulation.tax_benefit_system.variable_definition_by_name[variable_name]
-    return (definition.permanent ? PermanentVariable : ConcreteVariable)(simulation, definition)
-  end
-end
+get_entity(variable::Variable) = get_entity(variable.simulation, variable.definition.entity_definition)
 
 
-function set_array(variable::PermanentVariable, array::Array)
-  variable.array = array
-  return array
-end
-
-set_array(simulation::Simulation, variable_name, array) = set_array(get_variable!(simulation, variable_name), array)
-
-
-function set_period_array(variable::ConcreteVariable, period_array::PeriodArray)
-  variable.array_by_period[period_array.period] = period_array.array
-  return period_array
-end
-
-function set_period_array(variable::ConcreteVariable, array::Array)
-  period = variable.simulation.period
+function set_array_handle(variable::PeriodicVariable, period::DatePeriod, array::Array)
+  @assert length(array) == get_entity(variable).count
   variable.array_by_period[period] = array
-  return PeriodArray(period, array)
+  return PeriodArrayHandle(variable, period, array)
 end
 
-set_period_array(simulation::Simulation, variable_name, period_array::PeriodArray) = set_period_array(
-  get_variable!(simulation, variable_name), period_array)
+function set_array_handle(variable::PeriodicVariable, array_handle::PeriodArrayHandle)
+  array = array_handle.array
+  @assert length(array) == get_entity(variable).count
+  variable.array_by_period[array_handle.period] = array
+  return array_handle
+end
 
-set_period_array(simulation::Simulation, variable_name, array::Array) = set_period_array(
-  get_variable!(simulation, variable_name), array)
+set_array_handle(variable::PeriodicVariable, array::Array) = set_array_handle(variable, variable.simulation.period,
+  array)
+
+function set_array_handle(variable::PermanentVariable, array_handle::PermanentArrayHandle)
+  array = array_handle.array
+  @assert length(array) == get_entity(variable).count
+  variable.array = array
+  return array_handle
+end
+
+function set_array_handle(variable::PermanentVariable, array::Array)
+  @assert length(array) == get_entity(variable).count
+  variable.array = array
+  return PermanentArrayHandle(variable, array)
+end

@@ -20,11 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-export TaxBenefitSystem
-
-
 type TaxBenefitSystem
   entity_definition_by_name::Dict{String, EntityDefinition}
+  person_name::String  # Name of person entity
   variable_definition_by_name::Dict{String, VariableDefinition}
 
   function TaxBenefitSystem(entities_definition, variables_definition)
@@ -33,10 +31,21 @@ type TaxBenefitSystem
         entity_definition.name => entity_definition
         for entity_definition in entities_definition
       ],
+      get_person_name(entities_definition),
       [
         variable_definition.name => variable_definition
         for variable_definition in variables_definition
       ],
     )
   end
+end
+
+
+function get_person_name(entities_definition::Array{EntityDefinition})
+  for entity_definition in entities_definition
+    if entity_definition.is_person
+      return entity_definition.name
+    end
+  end
+  error("List of entities ", entities_definition, " contains no person entity")
 end

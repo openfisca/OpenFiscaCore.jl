@@ -21,21 +21,24 @@
 
 
 # export Day, Month, Year
-#
-#
-# convert(::Type{Day}, array::Array{Date}) = Array{Day}[
-#   Day(date)
-#   for date in array
-# ]
-#
-#
-# convert(::Type{Month}, array::Array{Date}) = Array{Month}[
-#   Month(date)
-#   for date in array
-# ]
-#
-#
-# convert(::Type{Year}, array::Array{Date}) = Array{Year}[
-#   Year(date)
-#   for date in array
-# ]
+
+
+beginswith(array::Array, prefix) = Bool[beginswith(cell, prefix) for cell in array]
+
+
+convert(::Type{Array{Day}}, array::Array{Date}) = Day[
+  Day(date)
+  for date in array
+]
+
+
+convert(::Type{Array{Month}}, array::Array{Date}) = Month[
+  Month(date)
+  for date in array
+]
+
+
+convert(::Type{Array{Year}}, array::Array{Date}) = Year[
+  Year(date)
+  for date in array
+]
