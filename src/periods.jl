@@ -32,6 +32,10 @@ DayPeriod(start::Integer, length) = DayPeriod(Date(start), length)
 DayPeriod(start) = DayPeriod(start, 1)
 
 
+type EmptyPeriod <: DatePeriod
+end
+
+
 immutable MonthPeriod <: DatePeriod
   start::Date
   length::Unsigned
@@ -50,5 +54,50 @@ YearPeriod(start::Integer, length) = YearPeriod(Date(start), length)
 YearPeriod(start) = YearPeriod(start, 1)
 
 
+days(period::DatePeriod) = period.start - stop_date(period) + 1
+
+
+empty_period = EmptyPeriod()
+
+
+function intersection(period::DatePeriod, start::Date, stop::Date)
+  period_start = period.start
+  period_stop = stop_date(period)
+  if stop < period_start || period_stop < start
+    return empty_period
+  end
+  intersection_start = max(period_start, start)
+  intersection_stop = min(period_stop, stop)
+  if intersection_start == period_start && intersection_stop == period_stop
+    return period
+  end
+  if (day(intersection_start) == 1 && month(intersection_start) == 1 && day(intersection_stop) == 31
+      && month(intersection_stop) == 12)
+    return YearPeriod(intersection_start, year(intersection_stop) - year(intersection_start) + 1)
+  end
+  if day(intersection_start) == 1 && day(intersection_stop) == day(lastdayofmonth(intersection_stop))
+    return MonthPeriod(intersection_start, (year(intersection_stop) - year(intersection_start)) * 12
+      + month(intersection_stop) - month(intersection_start) + 1)
+  end
+  return DayPeriod(intersection_start, int(intersection_stop - intersection_start) + 1)
+end
+
+
 isfinite(::Period) = true
-real(period::Period) = real(int(period))
+
+
+real(period::Period) = real(period.value)
+
+
+stop_date(period::DayPeriod) = period.start + Day(period.length - 1)
+
+stop_date(period::MonthPeriod) = period.start + Month(period.length) - Day(1)
+
+stop_date(period::YearPeriod) = period.start + Year(period.length) - Day(1)
+
+
+unit_type(period::DayPeriod) = Day
+
+unit_type(period::MonthPeriod) = Month
+
+unit_type(period::YearPeriod) = Year

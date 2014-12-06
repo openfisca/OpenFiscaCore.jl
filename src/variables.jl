@@ -35,26 +35,196 @@ type PermanentVariable <: Variable
   # A permanent variable is a variable whose value doesn't depend from date (example: ID, birth)
   simulation::Simulation
   definition::VariableDefinition
-  exact_array::Array
-  extrapolated_array::Array
+  array::Array
 end
 
-PermanentVariable(simulation, definition) = PermanentVariable(simulation, definition, [], [])
+PermanentVariable(simulation, definition) = PermanentVariable(simulation, definition, [])
 
 
 function calculate(variable::PeriodicVariable, period::DatePeriod)
-  array = get_array!(variable, period) do
-    definition = variable.definition
-    if isa(definition, FormulaDefinition)
-      array_handle = definition.func(variable, period)
-      @assert isa(array_handle, PeriodArrayHandle)
-      return get_array(array_handle, nothing)
+  array_handle = get_array_handle(variable, period, nothing)
+  if array_handle !== nothing
+    return array_handle
+  end
+
+  definition = variable.definition
+  exact_array_by_period = variable.exact_array_by_period
+  simulation = variable.simulation
+  requested_start_date = period.start
+  requested_stop_date = stop_date(period)
+  trace = simulation.trace
+
+  if !isempty(exact_array_by_period)
+    array = nothing
+    # if trace
+    #   used_periods = DatePeriod[]
+    # end
+    sorted_exact_period_and_array_couples = sort(collect(exact_array_by_period),
+      by = period_array_couple -> period_array_couple[1].start)
+    best_first_index = -1
+    best_fist_start_date = Date(0, 1, 1)
+    for (index, (exact_period, exact_array)) in enumerate(sorted_exact_period_and_array_couples)
+      exact_start_date = exact_period.start
+      if exact_start_date == best_fist_start_date
+        # When encountering several periods starting with the same date, use the smallest one.
+        continue
+      end
+      if exact_start_date <= requested_start_date
+        best_first_index = index
+        best_fist_start_date = exact_start_date
+        if exact_start_date == requested_start_date
+          break
+        end
+      else
+        break
+      end
     end
+    if best_first_index >= 0
+      remaining_start_date = requested_start_date
+      for (exact_period, exact_array) in sorted_exact_period_and_array_couples[best_first_index : end]
+        exact_start_date = exact_period.start
+        if exact_start_date > requested_stop_date
+          # The existing data arrays don't fully cover the requested period.
+          break
+        end
+        exact_stop_date = stop_date(exact_period)
+        if exact_start_date <= remaining_start_date && exact_stop_date >= remaining_start_date
+          if definition.period_size_independent
+            # Use always the first value for the period, because the output period may end before
+            # the requested period (because of base date).
+            if array === nothing
+              array = copy(exact_array)
+            end
+          else
+            intersection_period = intersection(exact_period, remaining_start_date, requested_stop_date)
+            @assert intersection_period !== empty_period
+            exact_period_type = typeof(exact_period)
+            intersection_period_type = typeof(intersection_period)
+            if intersection_period_type == exact_period_type
+              intersection_array = exact_array * intersection_period.length / exact_period.length
+            elseif intersection_period_type === MonthPeriod && exact_period_type === YearPeriod
+              intersection_array = exact_array * intersection_period.length / (exact_period.length * 12)
+            elseif intersection_period_type === YearPeriod && exact_period_type === MonthPeriod
+              intersection_array = exact_array * intersection_period.length * 12 / exact_period.length
+            else
+              intersection_array = exact_array * days(intersection_period).value / days(exact_period).value
+            end
+            if array === nothing
+              array = copy(intersection_array)
+            else
+              array .+= intersection_array
+            end
+            # if trace
+            #   push!(used_periods, exact_period)
+            # end
+          end
+          remaining_start_date = exact_stop_date + Day(1)
+          if remaining_start_date > requested_stop_date
+            variable.extrapolated_array_by_period[period] = array
+            # if trace
+            #   simulation.traceback[(definition.name, period)]['used_periods'] = used_periods
+            # end
+            return PeriodArrayHandle(variable, period)
+          end
+        end
+        if exact_stop_date >= requested_stop_date
+          # The existing data arrays don't fully cover the requested period.
+          break
+        end
+      end
+    end
+  end
+
+  if isa(definition, FormulaDefinition)
+    formula_period = period
+    while true
+      array_handle = definition.func(variable, formula_period)
+      @assert isa(array_handle, PeriodArrayHandle)
+      formula_period = array_handle.period
+      formula_period = typeof(formula_period)(formula_period.start + unit_type(formula_period)(formula_period.length),
+        formula_period.length)
+      if formula_period.start > requested_stop_date
+        break
+      end
+    end
+  end
+
+  array = nothing
+  # if trace
+  #   used_periods = DatePeriod[]
+  # end
+  if !isempty(exact_array_by_period)
+    sorted_exact_period_and_array_couples = sort(collect(exact_array_by_period),
+      by = period_array_couple -> period_array_couple[1].start)
+    best_first_index = -1
+    best_fist_start_date = Date(0, 1, 1)
+    for (index, (exact_period, exact_array)) in enumerate(sorted_exact_period_and_array_couples)
+      exact_start_date = exact_period.start
+      if exact_start_date == best_fist_start_date
+        # When encountering several periods starting with the same date, use the smallest one.
+        continue
+      end
+      if exact_start_date <= requested_start_date
+        best_first_index = index
+        best_fist_start_date = exact_start_date
+        if exact_start_date == requested_start_date
+          break
+        end
+      else
+        break
+      end
+    end
+    if best_first_index >= 0
+      remaining_start_date = requested_start_date
+      for (exact_period, exact_array) in sorted_exact_period_and_array_couples[best_first_index : end]
+        exact_start_date = exact_period.start
+        exact_stop_date = stop_date(exact_period)
+        intersection_period = intersection(exact_period, exact_start_date, exact_stop_date)
+        if intersection_period !== empty_period
+          if definition.period_size_independent
+            # Use always the first value for the period, because the output period may end before
+            # the requested period (because of base date).
+            if array === nothing
+              array = copy(exact_array)
+            end
+          else
+            exact_period_type = typeof(exact_period)
+            intersection_period_type = typeof(intersection_period)
+            if intersection_period_type == exact_period_type
+              intersection_array = exact_array * intersection_period.length / exact_period.length
+            elseif intersection_period_type === MonthPeriod && exact_period_type === YearPeriod
+              intersection_array = exact_array * intersection_period.length / (exact_period.length * 12)
+            elseif intersection_period_type === YearPeriod && exact_period_type === MonthPeriod
+              intersection_array = exact_array * intersection_period.length * 12 / exact_period.length
+            else
+              intersection_array = exact_array * days(intersection_period) / days(exact_period)
+            end
+            if array === nothing
+              array = copy(intersection_array)
+            else
+              array .+= intersection_array
+            end
+            # if trace
+            #   push!(used_periods, exact_period)
+            # end
+          end
+        end
+        if exact_stop_date >= requested_stop_date
+          # The existing data arrays don't fully cover the requested period.
+          break
+        end
+      end
+    end
+  end
+
+  if array === nothing
     array = Array(definition.cell_type, get_entity(variable).count)
     fill!(array, definition.cell_default)
-    set_array_handle(variable, period, array)
-    return array
   end
+  variable.extrapolated_array_by_period[period] = array
+  # if trace && used_periods
+  #   simulation.traceback[(definition.name, period)]['used_periods'] = used_periods
+  # end
   return PeriodArrayHandle(variable, period)
 end
 
@@ -68,7 +238,7 @@ function calculate(variable::PermanentVariable, period::DatePeriod)
     end
     array = Array(definition.cell_type, get_entity(variable).count)
     fill!(array, definition.cell_default)
-    set_array_handle(variable, array)
+    variable.array = array
     return array
   end
   return PermanentArrayHandle(variable)
@@ -101,11 +271,7 @@ end
 get_array(variable::PeriodicVariable) = get_array(variable, variable.simulation.period)
 
 function get_array(variable::PermanentVariable, default)
-  array = variable.exact_array
-  if !isempty(array)
-    return array
-  end
-  array = variable.extrapolated_array
+  array = variable.array
   return isempty(array) ? default : array
 end
 
@@ -139,21 +305,13 @@ function get_array!(func::Function, variable::PeriodicVariable, period::DatePeri
   return array
 end
 
-function get_array!(func::Function, variable::PermanentVariable; set_extrapolated = false)
-  array = variable.exact_array
-  if !isempty(array)
-    return array
-  end
-  array = variable.extrapolated_array
+function get_array!(func::Function, variable::PermanentVariable)
+  array = variable.array
   if !isempty(array)
     return array
   end
   array = func()
-  if set_extrapolated
-    variable.extrapolated_array = array
-  else
-    variable.exact_array = array
-  end
+  variable.array = array
   return array
 end
 
@@ -221,12 +379,12 @@ set_array_handle(variable::PeriodicVariable, array::Array) = set_array_handle(va
 function set_array_handle(variable::PermanentVariable, array_handle::PermanentArrayHandle)
   array = get_array(array_handle)
   @assert length(array) == get_entity(variable).count
-  variable.exact_array = array
+  variable.array = array
   return array_handle
 end
 
 function set_array_handle(variable::PermanentVariable, array::Array)
   @assert length(array) == get_entity(variable).count
-  variable.exact_array = array
+  variable.array = array
   return PermanentArrayHandle(variable)
 end

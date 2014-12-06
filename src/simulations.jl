@@ -25,9 +25,10 @@ type Simulation <: AbstractSimulation
   period::DatePeriod
   entity_by_name::Dict{String, Entity}
   variable_by_name::Dict{String, Variable}
+  trace::Bool
 
-  function Simulation(tax_benefit_system, period, variable_by_name)
-    simulation = new(tax_benefit_system, period, Dict{String, Entity}(), variable_by_name)
+  function Simulation(tax_benefit_system, period, variable_by_name; trace = false)
+    simulation = new(tax_benefit_system, period, Dict{String, Entity}(), variable_by_name, trace)
     simulation.entity_by_name = [
       name => Entity(simulation, entity_definition)
       for (name, entity_definition) in tax_benefit_system.entity_definition_by_name
@@ -36,7 +37,8 @@ type Simulation <: AbstractSimulation
   end
 end
 
-Simulation(tax_benefit_system, period) = Simulation(tax_benefit_system, period, Dict{String, Variable}())
+Simulation(tax_benefit_system, period; trace = false) = Simulation(tax_benefit_system, period, Dict{String, Variable}(),
+  trace = trace)
 
 
 calculate(simulation::Simulation, variable_name, period) = calculate(get_variable!(simulation, variable_name), period)

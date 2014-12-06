@@ -77,12 +77,12 @@ end
 
 
 rsa = FormulaDefinition("rsa", individu, Float32, label = "RSA") do variable, period
-  period = YearPeriod(firstdayofyear(period.start))
+  period = MonthPeriod(firstdayofmonth(period.start))
   date = period.start
   if date < Date(2010, 1, 1)
     return set_array_handle(variable, period, zeros(variable.definition.cell_type, get_entity(variable).count))
   end
-  if date < Date(2012, 1, 1)
+  if date < Date(2011, 1, 1)
     return set_array_handle(variable, period, (@calculate(salaire_imposable, period) .< 500) * 100)
   end
   if date < Date(2013, 1, 1)

@@ -29,13 +29,15 @@ type BareVariableDefinition <: VariableDefinition
   cell_type::Type
   cell_default
   label::String
+  period_size_independent::Bool  # When true, value of column doesn't depend from size of period (example: age)
   permanent::Bool  # When true, value of variable doesn't depend from date (example: ID, birth)
 
   function BareVariableDefinition(name, entity_definition, cell_type; cell_default = nothing, label = name,
-      permanent = false)
+      period_size_independent = false, permanent = false)
     if cell_default === nothing
       cell_default =
         cell_type <: Date ? Date(1970, 1, 1) :
+        cell_type <: Day ? 0 :
         cell_type <: Real ? 0.0 :
         cell_type <: Int ? 0 :
         cell_type <: Month ? 0 :
@@ -45,7 +47,11 @@ type BareVariableDefinition <: VariableDefinition
         cell_type <: Year ? 0 :
         error("Unknown default for type ", cell_type)
     end
-    return new(name, entity_definition, cell_type, cell_default, label, permanent)
+    if !period_size_independent && (permanent || cell_type <: Date || cell_type <: Day || cell_type <: Int
+        || cell_type <: Month || cell_type <: Role || cell_type <: String || cell_type <: Unsigned || cell_type <: Year)
+      period_size_independent = true
+    end
+    return new(name, entity_definition, cell_type, cell_default, label, period_size_independent, permanent)
   end
 end
 
@@ -56,8 +62,15 @@ type FormulaDefinition <: VariableDefinition
   entity_definition::EntityDefinition
   cell_type::Type
   label::String
+  period_size_independent::Bool  # When true, value of column doesn't depend from size of period (example: age)
   permanent::Bool  # When true, value of variable doesn't depend from date (example: ID, birth)
-end
 
-FormulaDefinition(func, name, entity_definition, cell_type; label = name, permanent = false) = FormulaDefinition(func,
-  name, entity_definition, cell_type, label, permanent)
+  function FormulaDefinition(func, name, entity_definition, cell_type; label = name, period_size_independent = false,
+      permanent = false)
+    if !period_size_independent && (permanent || cell_type <: Date || cell_type <: Day || cell_type <: Int
+        || cell_type <: Month || cell_type <: Role || cell_type <: String || cell_type <: Unsigned || cell_type <: Year)
+      period_size_independent = true
+    end
+    return new(func, name, entity_definition, cell_type, label, period_size_independent, permanent)
+  end
+end
