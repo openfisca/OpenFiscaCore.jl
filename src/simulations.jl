@@ -39,6 +39,12 @@ end
 Simulation(tax_benefit_system, period) = Simulation(tax_benefit_system, period, Dict{String, Variable}())
 
 
+calculate(simulation::Simulation, variable_name, period) = calculate(get_variable!(simulation, variable_name), period)
+
+calculate(simulation::Simulation, variable_name) = calculate(
+  get_variable!(simulation, variable_name), simulation.period)
+
+
 get_array_handle(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),
   default)
 

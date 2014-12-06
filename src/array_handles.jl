@@ -26,53 +26,51 @@ abstract ArrayHandle
 type PeriodArrayHandle <: ArrayHandle
   variable::Variable
   period::DatePeriod
-  array::Array
 end
 
 
 type PermanentArrayHandle <: ArrayHandle
   variable::Variable
-  array::Array
 end
 
 
-*(array_handle::ArrayHandle, right::Number) = array_handle.array * right
+*(array_handle::ArrayHandle, right::Number) = get_array(array_handle) * right
 
-*(array_handle::ArrayHandle, right::Array) = array_handle.array * right
+*(array_handle::ArrayHandle, right::Array) = get_array(array_handle) * right
 
-*(left::Number, array_handle::ArrayHandle) = left * array_handle.array
+*(left::Number, array_handle::ArrayHandle) = left * get_array(array_handle)
 
-*(left::Array, array_handle::ArrayHandle) = left * array_handle.array
-
-
-+(array_handle::ArrayHandle, right::Number) = array_handle.array + right
-
-+(array_handle::ArrayHandle, right::Array) = array_handle.array + right
-
-+(left::Number, array_handle::ArrayHandle) = left + array_handle.array
-
-+(left::Array, array_handle::ArrayHandle) = left + array_handle.array
+*(left::Array, array_handle::ArrayHandle) = left * get_array(array_handle)
 
 
-.<(array_handle::ArrayHandle, right::Number) = array_handle.array .< right
++(array_handle::ArrayHandle, right::Number) = get_array(array_handle) + right
 
-.<(array_handle::ArrayHandle, right::Array) = array_handle.array .< right
++(array_handle::ArrayHandle, right::Array) = get_array(array_handle) + right
 
-.<(left::Number, array_handle::ArrayHandle) = left .< array_handle.array
++(left::Number, array_handle::ArrayHandle) = left + get_array(array_handle)
 
-.<(left::Array, array_handle::ArrayHandle) = left .< array_handle.array
-
-
-beginswith(array_handle::ArrayHandle, prefix) = beginswith(array_handle.array, prefix)
++(left::Array, array_handle::ArrayHandle) = left + get_array(array_handle)
 
 
-done(array_handle::ArrayHandle, state) = done(array_handle.array, state)
+.<(array_handle::ArrayHandle, right::Number) = get_array(array_handle) .< right
+
+.<(array_handle::ArrayHandle, right::Array) = get_array(array_handle) .< right
+
+.<(left::Number, array_handle::ArrayHandle) = left .< get_array(array_handle)
+
+.<(left::Array, array_handle::ArrayHandle) = left .< get_array(array_handle)
+
+
+beginswith(array_handle::ArrayHandle, prefix) = beginswith(get_array(array_handle), prefix)
+
+
+done(array_handle::ArrayHandle, state) = done(get_array(array_handle), state)
 
 
 entity_to_person(array_handle::ArrayHandle, role::Role) = entity_to_person(array_handle, Role[role])
 
 function entity_to_person(array_handle::ArrayHandle, roles::Array{Role})
-  array = array_handle.array
+  array = get_array(array_handle)
   period = array_handle.period
   entity = get_entity(array_handle)
   @assert !is_person(entity)
@@ -82,15 +80,15 @@ function entity_to_person(array_handle::ArrayHandle, roles::Array{Role})
   if roles == ALL_ROLES
     person_array = variable_definition.cell_type[
       array[index_cell]
-      for index_cell in get_index_variable(entity).array
+      for index_cell in get_array(get_index_variable(entity), period)
     ]
   else
     cell_default = variable_definition.cell_default
     person_array = variable_definition.cell_type[
       role_cell in roles ? array[index_cell] : cell_default
       for (index_cell, role_cell) in zip(
-        get_index_variable(entity).array,
-        get_array_handle(get_role_variable(entity), period, nothing).array,
+        get_array(get_index_variable(entity)),
+        get_array(get_role_variable(entity), period),
       )
     ]
   end
@@ -100,13 +98,22 @@ end
 entity_to_person(array_handle::ArrayHandle) = entity_to_person(array_handle, ALL_ROLES)
 
 
+get_array(array_handle::PeriodArrayHandle, default) = get_array(array_handle.variable, array_handle.period, default)
+
+get_array(array_handle::PeriodArrayHandle) = get_array(array_handle.variable, array_handle.period)
+
+get_array(array_handle::PermanentArrayHandle, default) = get_array(array_handle.variable, default)
+
+get_array(array_handle::PermanentArrayHandle) = get_array(array_handle.variable)
+
+
 get_entity(array_handle::ArrayHandle) = get_entity(array_handle.variable)
 
 
-length(array_handle::ArrayHandle) = length(array_handle.array)
+length(array_handle::ArrayHandle) = length(get_array(array_handle))
 
 
-next(array_handle::ArrayHandle, state) = next(array_handle.array, state)
+next(array_handle::ArrayHandle, state) = next(get_array(array_handle), state)
 
 
-start(array_handle::ArrayHandle) = start(array_handle.array)
+start(array_handle::ArrayHandle) = start(get_array(array_handle))

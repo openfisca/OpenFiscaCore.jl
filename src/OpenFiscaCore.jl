@@ -23,7 +23,7 @@
 module OpenFiscaCore
 
 
-export *, +, .<, @calculate, @get_array_handle, BareVariableDefinition, beginswith, calculate, DatePeriod, DayPeriod, Entity, entity_to_person, EntityDefinition, FormulaDefinition, get_array_handle, get_entity, get_variable!,isfinite, length, MonthPeriod, next, PeriodArrayHandle, PermanentArrayHandle, PeriodicVariable, PermanentVariable, real, Role, set_array_handle, Simulation, start, TaxBenefitSystem, VariableDefinition, YearPeriod
+export *, +, .<, @calculate, @get_array_handle, BareVariableDefinition, beginswith, calculate, DatePeriod, DayPeriod, Entity, entity_to_person, EntityDefinition, FormulaDefinition, get_array, get_array_handle, get_entity, get_variable!,isfinite, length, MonthPeriod, next, PeriodArrayHandle, PermanentArrayHandle, PeriodicVariable, PermanentVariable, real, Role, set_array_handle, Simulation, start, TaxBenefitSystem, VariableDefinition, YearPeriod
 
 
 using Dates
