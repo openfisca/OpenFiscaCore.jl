@@ -54,11 +54,25 @@ function calculate(variable::PeriodicVariable, period::DatePeriod)
   requested_stop_date = stop_date(period)
   trace = simulation.trace
 
+  if isa(definition, FormulaDefinition)
+    formula_period = period
+    while true
+      array_handle = definition.func(variable, formula_period)
+      @assert isa(array_handle, PeriodArrayHandle)
+      formula_period = array_handle.period
+      formula_period = typeof(formula_period)(formula_period.start + unit_type(formula_period)(formula_period.length),
+        formula_period.length)
+      if formula_period.start > requested_stop_date
+        break
+      end
+    end
+  end
+
+  array = nothing
+  # if trace
+  #   used_periods = DatePeriod[]
+  # end
   if !isempty(exact_array_by_period)
-    array = nothing
-    # if trace
-    #   used_periods = DatePeriod[]
-    # end
     sorted_exact_period_and_array_couples = sort(collect(exact_array_by_period),
       by = period_array_couple -> period_array_couple[1].start)
     best_first_index = -1
@@ -125,88 +139,6 @@ function calculate(variable::PeriodicVariable, period::DatePeriod)
             #   simulation.traceback[(definition.name, period)]['used_periods'] = used_periods
             # end
             return PeriodArrayHandle(variable, period)
-          end
-        end
-        if exact_stop_date >= requested_stop_date
-          # The existing data arrays don't fully cover the requested period.
-          break
-        end
-      end
-    end
-  end
-
-  if isa(definition, FormulaDefinition)
-    formula_period = period
-    while true
-      array_handle = definition.func(variable, formula_period)
-      @assert isa(array_handle, PeriodArrayHandle)
-      formula_period = array_handle.period
-      formula_period = typeof(formula_period)(formula_period.start + unit_type(formula_period)(formula_period.length),
-        formula_period.length)
-      if formula_period.start > requested_stop_date
-        break
-      end
-    end
-  end
-
-  array = nothing
-  # if trace
-  #   used_periods = DatePeriod[]
-  # end
-  if !isempty(exact_array_by_period)
-    sorted_exact_period_and_array_couples = sort(collect(exact_array_by_period),
-      by = period_array_couple -> period_array_couple[1].start)
-    best_first_index = -1
-    best_fist_start_date = Date(0, 1, 1)
-    for (index, (exact_period, exact_array)) in enumerate(sorted_exact_period_and_array_couples)
-      exact_start_date = exact_period.start
-      if exact_start_date == best_fist_start_date
-        # When encountering several periods starting with the same date, use the smallest one.
-        continue
-      end
-      if exact_start_date <= requested_start_date
-        best_first_index = index
-        best_fist_start_date = exact_start_date
-        if exact_start_date == requested_start_date
-          break
-        end
-      else
-        break
-      end
-    end
-    if best_first_index >= 0
-      remaining_start_date = requested_start_date
-      for (exact_period, exact_array) in sorted_exact_period_and_array_couples[best_first_index : end]
-        exact_start_date = exact_period.start
-        exact_stop_date = stop_date(exact_period)
-        intersection_period = intersection(exact_period, exact_start_date, exact_stop_date)
-        if intersection_period !== empty_period
-          if definition.period_size_independent
-            # Use always the first value for the period, because the output period may end before
-            # the requested period (because of base date).
-            if array === nothing
-              array = copy(exact_array)
-            end
-          else
-            exact_period_type = typeof(exact_period)
-            intersection_period_type = typeof(intersection_period)
-            if intersection_period_type == exact_period_type
-              intersection_array = exact_array * intersection_period.length / exact_period.length
-            elseif intersection_period_type === MonthPeriod && exact_period_type === YearPeriod
-              intersection_array = exact_array * intersection_period.length / (exact_period.length * 12)
-            elseif intersection_period_type === YearPeriod && exact_period_type === MonthPeriod
-              intersection_array = exact_array * intersection_period.length * 12 / exact_period.length
-            else
-              intersection_array = exact_array * days(intersection_period) / days(exact_period)
-            end
-            if array === nothing
-              array = copy(intersection_array)
-            else
-              array .+= intersection_array
-            end
-            # if trace
-            #   push!(used_periods, exact_period)
-            # end
           end
         end
         if exact_stop_date >= requested_stop_date
