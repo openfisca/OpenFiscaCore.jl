@@ -47,6 +47,13 @@ calculate(simulation::Simulation, variable_name) = calculate(
   get_variable!(simulation, variable_name), simulation.period)
 
 
+divide_year(simulation::Simulation, variable_name, period) = divide_year(get_variable!(simulation, variable_name),
+  period)
+
+divide_year(simulation::Simulation, variable_name) = divide_year(
+  get_variable!(simulation, variable_name), simulation.period)
+
+
 get_array_handle(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),
   default)
 
@@ -78,3 +85,9 @@ set_array_handle(simulation::Simulation, variable_name, array_handle::ArrayHandl
 
 set_array_handle(simulation::Simulation, variable_name, array::Array) = set_array_handle(
   get_variable!(simulation, variable_name), array)
+
+
+sum_months(simulation::Simulation, variable_name, period) = sum_months(get_variable!(simulation, variable_name), period)
+
+sum_months(simulation::Simulation, variable_name) = sum_months(
+  get_variable!(simulation, variable_name), simulation.period)

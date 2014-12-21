@@ -79,7 +79,7 @@ end
 revenu_disponible = VariableDefinition("revenu_disponible", individu, Float32, label = "Revenu disponible de la famille"
 ) do variable, period
   period = YearPeriod(firstdayofyear(period.start))
-  @calculate(rsa, period)
+  @sum_months(rsa, period)
   @calculate(salaire_imposable, period)
   return period, rsa + salaire_imposable * 0.7
 end
@@ -89,15 +89,18 @@ rsa = VariableDefinition("rsa", individu, Float32, label = "RSA") do variable, p
   period = MonthPeriod(firstdayofmonth(period.start))
   date = period.start
   if date < Date(2010, 1, 1)
-    return period, zeros(variable.definition.cell_type, get_entity(variable).count)
+    array = zeros(variable)
+  else
+    @divide_year(salaire_imposable, period)
+    if date < Date(2011, 1, 1)
+      array = (salaire_imposable .< 500) * 100
+    elseif date < Date(2013, 1, 1)
+      array = (salaire_imposable .< 500) * 200
+    else
+      array = (salaire_imposable .< 500) * 300
+    end
   end
-  if date < Date(2011, 1, 1)
-    return period, (@calculate(salaire_imposable, period) .< 500) * 100
-  end
-  if date < Date(2013, 1, 1)
-    return period, (@calculate(salaire_imposable, period) .< 500) * 200
-  end
-  return period, (@calculate(salaire_imposable, period) .< 500) * 300
+  return period, array
 end
 
 

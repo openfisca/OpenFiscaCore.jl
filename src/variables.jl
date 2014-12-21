@@ -23,12 +23,10 @@
 type PeriodicVariable <: Variable
   simulation::AbstractSimulation
   definition::VariableDefinition
-  exact_array_by_period::Dict{DatePeriod, Array}
-  extrapolated_array_by_period::Dict{DatePeriod, Array}
+  array_by_period::Dict{DatePeriod, Array}
 end
 
-PeriodicVariable(simulation, definition) = PeriodicVariable(simulation, definition, Dict{DatePeriod, Array}(),
-  Dict{DatePeriod, Array}())
+PeriodicVariable(simulation, definition) = PeriodicVariable(simulation, definition, Dict{DatePeriod, Array}())
 
 
 type PermanentVariable <: Variable
@@ -41,131 +39,30 @@ end
 PermanentVariable(simulation, definition) = PermanentVariable(simulation, definition, [])
 
 
-function calculate(variable::PeriodicVariable, period::DatePeriod)
+function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_period = false)
   array_handle = get_array_handle(variable, period, nothing)
   if array_handle !== nothing
     return array_handle
   end
-
-  definition = variable.definition
-  exact_array_by_period = variable.exact_array_by_period
-  simulation = variable.simulation
-  requested_start_date = period.start
-  requested_stop_date = stop_date(period)
-  trace = simulation.trace
-
-  formula_period = period
-  while true
-    formula_period, array = definition.formula(variable, formula_period)
-    set_array_handle(variable, formula_period, array)
-    formula_period = typeof(formula_period)(formula_period.start + unit_type(formula_period)(formula_period.length),
-      formula_period.length)
-    if formula_period.start > requested_stop_date
-      break
-    end
+  formula_period, array = variable.definition.formula(variable, period)
+  if !accept_other_period && formula_period != period
+    error("Requested period $period differs from $formula_period returned by variable $(variable.definition.name).")
   end
-
-  array = nothing
-  # if trace
-  #   used_periods = DatePeriod[]
-  # end
-  if !isempty(exact_array_by_period)
-    sorted_exact_period_and_array_couples = sort(collect(exact_array_by_period),
-      by = period_array_couple -> period_array_couple[1].start)
-    best_first_index = -1
-    best_fist_start_date = Date(0, 1, 1)
-    for (index, (exact_period, exact_array)) in enumerate(sorted_exact_period_and_array_couples)
-      exact_start_date = exact_period.start
-      if exact_start_date == best_fist_start_date
-        # When encountering several periods starting with the same date, use the smallest one.
-        continue
-      end
-      if exact_start_date <= requested_start_date
-        best_first_index = index
-        best_fist_start_date = exact_start_date
-        if exact_start_date == requested_start_date
-          break
-        end
-      else
-        break
-      end
-    end
-    if best_first_index >= 0
-      remaining_start_date = requested_start_date
-      for (exact_period, exact_array) in sorted_exact_period_and_array_couples[best_first_index : end]
-        exact_start_date = exact_period.start
-        if exact_start_date > requested_stop_date
-          # The existing data arrays don't fully cover the requested period.
-          break
-        end
-        exact_stop_date = stop_date(exact_period)
-        if exact_start_date <= remaining_start_date && exact_stop_date >= remaining_start_date
-          if definition.period_size_independent
-            # Use always the first value for the period, because the output period may end before
-            # the requested period (because of base date).
-            if array === nothing
-              array = copy(exact_array)
-            end
-          else
-            intersection_period = intersection(exact_period, remaining_start_date, requested_stop_date)
-            @assert intersection_period !== empty_period
-            exact_period_type = typeof(exact_period)
-            intersection_period_type = typeof(intersection_period)
-            if intersection_period_type == exact_period_type
-              intersection_array = exact_array * intersection_period.length / exact_period.length
-            elseif intersection_period_type === MonthPeriod && exact_period_type === YearPeriod
-              intersection_array = exact_array * intersection_period.length / (exact_period.length * 12)
-            elseif intersection_period_type === YearPeriod && exact_period_type === MonthPeriod
-              intersection_array = exact_array * intersection_period.length * 12 / exact_period.length
-            else
-              intersection_array = exact_array * days(intersection_period).value / days(exact_period).value
-            end
-            if array === nothing
-              array = copy(intersection_array)
-            else
-              array .+= intersection_array
-            end
-            # if trace
-            #   push!(used_periods, exact_period)
-            # end
-          end
-          remaining_start_date = exact_stop_date + Day(1)
-          if remaining_start_date > requested_stop_date
-            variable.extrapolated_array_by_period[period] = array
-            # if trace
-            #   simulation.traceback[(definition.name, period)]['used_periods'] = used_periods
-            # end
-            return PeriodArrayHandle(variable, period)
-          end
-        end
-        if exact_stop_date >= requested_stop_date
-          # The existing data arrays don't fully cover the requested period.
-          break
-        end
-      end
-    end
-  end
-
-  if array === nothing
-    array = default_array(variable)
-  end
-  variable.extrapolated_array_by_period[period] = array
-  # if trace && used_periods
-  #   simulation.traceback[(definition.name, period)]['used_periods'] = used_periods
-  # end
-  return PeriodArrayHandle(variable, period)
+  return set_array_handle(variable, formula_period, array)
 end
 
-function calculate(variable::PermanentVariable, period::DatePeriod)
+calculate(variable::PermanentVariable, period::DatePeriod) = calculate(variable)
+
+calculate(variable::PeriodicVariable) = calculate(variable, variable.simulation.period)
+
+function calculate(variable::PermanentVariable)
   array = get_array!(variable) do
-    formula_period, array = variable.definition.formula(variable, period)
+    array = variable.definition.formula(variable)
     set_array_handle(variable, array)
     return array
   end
   return PermanentArrayHandle(variable)
 end
-
-calculate(variable::Variable) = calculate(variable, variable.simulation.period)
 
 
 macro calculate(new_variable, period)
@@ -181,10 +78,22 @@ function default_array(variable::Variable)
 end
 
 
-function get_array(variable::PeriodicVariable, period::DatePeriod, default)
-  array = get(variable.exact_array_by_period, period, nothing)
-  return array === nothing ? get(variable.extrapolated_array_by_period, period, default) : array
+function divide_year(variable::PeriodicVariable, period::MonthPeriod)
+  array_handle = calculate(variable, period, accept_other_period = true)
+  if !isa(array_handle.period, YearPeriod)
+    error("Requested a year period. Got $formula_period returned by variable $(variable.definition.name).")
+  end
+  return get_array(array_handle) ./ (12 * array_handle.period.length)
 end
+
+
+macro divide_year(new_variable, period)
+  global variable
+  return esc(:($new_variable = divide_year(variable.simulation, $(string(new_variable)), $period)))
+end
+
+
+get_array(variable::PeriodicVariable, period::DatePeriod, default) = get(variable.array_by_period, period, default)
 
 get_array(variable::PeriodicVariable, default) = get_array(variable, variable.simulation.period, default)
 
@@ -198,12 +107,14 @@ end
 
 get_array(variable::PeriodicVariable) = get_array(variable, variable.simulation.period)
 
+get_array(variable::PermanentVariable, period::DatePeriod, default) = get_array(variable, default)
+
+get_array(variable::PermanentVariable, period::DatePeriod) = get_array(variable)
+
 function get_array(variable::PermanentVariable, default)
   array = variable.array
   return isempty(array) ? default : array
 end
-
-get_array(variable::PermanentVariable, period::DatePeriod, default) = get_array(variable, default)
 
 function get_array(variable::PermanentVariable)
   array = get_array(variable, nothing)
@@ -213,25 +124,9 @@ function get_array(variable::PermanentVariable)
   return array
 end
 
-get_array(variable::PermanentVariable, period::DatePeriod) = get_array(variable)
 
-
-function get_array!(func::Function, variable::PeriodicVariable, period::DatePeriod; set_extrapolated = false)
-  array = get(variable.exact_array_by_period, period, nothing)
-  if array !== nothing
-    return array
-  end
-  if set_extrapolated
-    return get!(func, variable.extrapolated_array_by_period, period)
-  end
-  array = get(variable.extrapolated_array_by_period, period, nothing)
-  if array !== nothing
-    return array
-  end
-  array = func()
-  variable.exact_array_by_period[period] = array
-  return array
-end
+get_array!(func::Function, variable::PeriodicVariable, period::DatePeriod) = get!(func, variable.array_by_period,
+  period)
 
 function get_array!(func::Function, variable::PermanentVariable)
   array = variable.array
@@ -290,14 +185,14 @@ get_entity(variable::Variable) = get_entity(variable.simulation, variable.defini
 
 function set_array_handle(variable::PeriodicVariable, period::DatePeriod, array::Array)
   @assert length(array) == get_entity(variable).count
-  variable.exact_array_by_period[period] = array
+  variable.array_by_period[period] = array
   return PeriodArrayHandle(variable, period)
 end
 
 function set_array_handle(variable::PeriodicVariable, array_handle::PeriodArrayHandle)
   array = get_array(array_handle)
   @assert length(array) == get_entity(variable).count
-  variable.exact_array_by_period[array_handle.period] = array
+  variable.array_by_period[array_handle.period] = array
   return array_handle
 end
 
@@ -316,3 +211,30 @@ function set_array_handle(variable::PermanentVariable, array::Array)
   variable.array = array
   return PermanentArrayHandle(variable)
 end
+
+
+function sum_months(variable::PeriodicVariable, period::YearPeriod)
+  array = zeros(variable)
+  start_year, start_month, start_day = yearmonthday(period.start)
+  for month_index in 0:11
+    year = start_year
+    month = start_month + month_index
+    if month > 12
+      month -= 12
+      year += 1
+    end
+    month_period = MonthPeriod(Date(year, month, start_day))
+    array_handle = calculate(variable, month_period)
+    array += get_array(array_handle)
+  end
+  return array
+end
+
+
+macro sum_months(new_variable, period)
+  global variable
+  return esc(:($new_variable = sum_months(variable.simulation, $(string(new_variable)), $period)))
+end
+
+
+zeros(variable::Variable) = zeros(variable.definition.cell_type, get_entity(variable).count)

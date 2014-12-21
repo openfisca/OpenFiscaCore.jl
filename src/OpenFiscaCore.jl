@@ -23,12 +23,12 @@
 module OpenFiscaCore
 
 
-export *, +, .<, @calculate, @get_array_handle, beginswith, calculate, DatePeriod, DayPeriod, days, default_array, empty_period, Entity, entity_to_person, EntityDefinition, get_array, get_array_handle, get_entity, get_variable!, intersection, isfinite, length, MonthPeriod, next, PeriodArrayHandle, PermanentArrayHandle, PeriodicVariable, PermanentVariable, real, Role, set_array_handle, Simulation, start, stop_date, TaxBenefitSystem, unit_type, VariableDefinition, YearPeriod
+export *, +, .<, @calculate, @divide_year, @get_array_handle, @sum_months, beginswith, calculate, DatePeriod, DayPeriod, days, default_array, divide_year, empty_period, Entity, entity_to_person, EntityDefinition, get_array, get_array_handle, get_entity, get_variable!, intersection, isfinite, length, MonthPeriod, next, PeriodArrayHandle, PermanentArrayHandle, PeriodicVariable, PermanentVariable, real, Role, set_array_handle, Simulation, start, stop_date, sum_months, TaxBenefitSystem, unit_type, VariableDefinition, YearPeriod, zeros
 
 
 using Dates
 
-import Base: *, +, .<, beginswith, done, isfinite, length, next, real, start
+import Base: *, +, .<, beginswith, done, isfinite, length, next, real, start, zeros
 
 
 abstract AbstractSimulation

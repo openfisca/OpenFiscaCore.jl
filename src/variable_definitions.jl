@@ -27,11 +27,10 @@ type VariableDefinition
   cell_type::Type
   cell_default
   label::String
-  period_size_independent::Bool  # When true, value of column doesn't depend from size of period (example: age)
   permanent::Bool  # When true, value of variable doesn't depend from date (example: ID, birth)
 
   function VariableDefinition(formula, name::String, entity_definition::EntityDefinition, cell_type;
-      cell_default = nothing, label = name, period_size_independent = false, permanent = false)
+      cell_default = nothing, label = name, permanent = false)
     if cell_default === nothing
       cell_default =
         cell_type <: Date ? Date(1970, 1, 1) :
@@ -45,17 +44,13 @@ type VariableDefinition
         cell_type <: Year ? 0 :
         error("Unknown default for type ", cell_type)
     end
-    if !period_size_independent && (permanent || cell_type <: Date || cell_type <: Day || cell_type <: Int
-        || cell_type <: Month || cell_type <: Role || cell_type <: String || cell_type <: Unsigned || cell_type <: Year)
-      period_size_independent = true
-    end
-    return new(formula, name, entity_definition, cell_type, cell_default, label, period_size_independent, permanent)
+    return new(formula, name, entity_definition, cell_type, cell_default, label, permanent)
   end
 end
 
-VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type; cell_default = nothing, label = name,
-  period_size_independent = false, permanent = false) = VariableDefinition(name, entity_definition, cell_type,
-  cell_default = cell_default, label = label, period_size_independent = period_size_independent, permanent = permanent
-) do variable, period
-  return period, default_array(variable)
+function VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type; cell_default = nothing,
+    label = name, permanent = false)
+  formula = permanent ? variable -> default_array(variable) : (variable, period) -> (period, default_array(variable))
+  return VariableDefinition(formula, name, entity_definition, cell_type, cell_default = cell_default, label = label,
+    permanent = permanent)
 end
