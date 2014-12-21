@@ -56,9 +56,8 @@ function calculate(variable::PeriodicVariable, period::DatePeriod)
 
   formula_period = period
   while true
-    array_handle = definition.formula(variable, formula_period)
-    @assert isa(array_handle, PeriodArrayHandle)
-    formula_period = array_handle.period
+    formula_period, array = definition.formula(variable, formula_period)
+    set_array_handle(variable, formula_period, array)
     formula_period = typeof(formula_period)(formula_period.start + unit_type(formula_period)(formula_period.length),
       formula_period.length)
     if formula_period.start > requested_stop_date
@@ -159,9 +158,9 @@ end
 
 function calculate(variable::PermanentVariable, period::DatePeriod)
   array = get_array!(variable) do
-    array_handle = variable.definition.formula(variable, period)
-    @assert isa(array_handle, PermanentArrayHandle)
-    return get_array(array_handle, nothing)
+    formula_period, array = variable.definition.formula(variable, period)
+    set_array_handle(variable, array)
+    return array
   end
   return PermanentArrayHandle(variable)
 end

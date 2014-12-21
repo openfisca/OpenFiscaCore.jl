@@ -57,5 +57,5 @@ VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type;
   period_size_independent = false, permanent = false) = VariableDefinition(name, entity_definition, cell_type,
   cell_default = cell_default, label = label, period_size_independent = period_size_independent, permanent = permanent
 ) do variable, period
-  return set_array_handle(variable, period, default_array(variable))
+  return period, default_array(variable)
 end

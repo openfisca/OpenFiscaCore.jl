@@ -56,10 +56,9 @@ salaire_brut = VariableDefinition("salaire_brut", individu, Float32, label = "Sa
 
 age = VariableDefinition("age", individu, Year, label = "Âge (en nombre d'années)") do variable, period
   @get_array_handle(age_en_mois, period, nothing)
-  return set_array_handle(variable, period,
-    age_en_mois === nothing
-      ? Year[Year(period.start) - Year(birth_cell) for birth_cell in @calculate(birth, period)]
-      : Year[Year(int(div(cell, 12))) for cell in age_en_mois])
+  return period, (age_en_mois === nothing
+    ? Year[Year(period.start) - Year(birth_cell) for birth_cell in @calculate(birth, period)]
+    : Year[Year(int(div(cell, 12))) for cell in age_en_mois])
 end
 
 
@@ -67,13 +66,13 @@ dom_tom = VariableDefinition("dom_tom", famille, Bool, label = "La famille habit
 ) do variable, period
   period = YearPeriod(firstdayofyear(period.start))
   @calculate(depcom, period)
-  return set_array_handle(variable, period, beginswith(depcom, "97") .+ beginswith(depcom, "98"))
+  return period, beginswith(depcom, "97") .+ beginswith(depcom, "98")
 end
 
 
 dom_tom_individu = VariableDefinition("dom_tom_individu", individu, Bool,
   label = "La personne habite-t-elle les DOM-TOM ?") do variable, period
-  return set_array_handle(variable, period, entity_to_person(@calculate(dom_tom, period)))
+  return period, entity_to_person(@calculate(dom_tom, period))
 end
 
 
@@ -82,7 +81,7 @@ revenu_disponible = VariableDefinition("revenu_disponible", individu, Float32, l
   period = YearPeriod(firstdayofyear(period.start))
   @calculate(rsa, period)
   @calculate(salaire_imposable, period)
-  return set_array_handle(variable, period, rsa + salaire_imposable * 0.7)
+  return period, rsa + salaire_imposable * 0.7
 end
 
 
@@ -90,29 +89,28 @@ rsa = VariableDefinition("rsa", individu, Float32, label = "RSA") do variable, p
   period = MonthPeriod(firstdayofmonth(period.start))
   date = period.start
   if date < Date(2010, 1, 1)
-    return set_array_handle(variable, period, zeros(variable.definition.cell_type, get_entity(variable).count))
+    return period, zeros(variable.definition.cell_type, get_entity(variable).count)
   end
   if date < Date(2011, 1, 1)
-    return set_array_handle(variable, period, (@calculate(salaire_imposable, period) .< 500) * 100)
+    return period, (@calculate(salaire_imposable, period) .< 500) * 100
   end
   if date < Date(2013, 1, 1)
-    return set_array_handle(variable, period, (@calculate(salaire_imposable, period) .< 500) * 200)
+    return period, (@calculate(salaire_imposable, period) .< 500) * 200
   end
-  return set_array_handle(variable, period, (@calculate(salaire_imposable, period) .< 500) * 300)
+  return period, (@calculate(salaire_imposable, period) .< 500) * 300
 end
 
 
 salaire_imposable = VariableDefinition("salaire_imposable", individu, Float32, label = "Salaire imposable"
 ) do variable, period
   period = YearPeriod(firstdayofyear(period.start))
-  return set_array_handle(variable, period,
-    @calculate(salaire_net, period) * 0.9 - 100 * @calculate(dom_tom_individu, period))
+  return period, @calculate(salaire_net, period) * 0.9 - 100 * @calculate(dom_tom_individu, period)
 end
 
 
 salaire_net = VariableDefinition("salaire_net", individu, Float32, label = "Salaire net") do variable, period
   period = YearPeriod(firstdayofyear(period.start))
-  return set_array_handle(variable, period, @calculate(salaire_brut, period) * 0.8)
+  return period, @calculate(salaire_brut, period) * 0.8
 end
 
 
