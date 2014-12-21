@@ -54,17 +54,15 @@ function calculate(variable::PeriodicVariable, period::DatePeriod)
   requested_stop_date = stop_date(period)
   trace = simulation.trace
 
-  if isa(definition, FormulaDefinition)
-    formula_period = period
-    while true
-      array_handle = definition.formula(variable, formula_period)
-      @assert isa(array_handle, PeriodArrayHandle)
-      formula_period = array_handle.period
-      formula_period = typeof(formula_period)(formula_period.start + unit_type(formula_period)(formula_period.length),
-        formula_period.length)
-      if formula_period.start > requested_stop_date
-        break
-      end
+  formula_period = period
+  while true
+    array_handle = definition.formula(variable, formula_period)
+    @assert isa(array_handle, PeriodArrayHandle)
+    formula_period = array_handle.period
+    formula_period = typeof(formula_period)(formula_period.start + unit_type(formula_period)(formula_period.length),
+      formula_period.length)
+    if formula_period.start > requested_stop_date
+      break
     end
   end
 
@@ -150,8 +148,7 @@ function calculate(variable::PeriodicVariable, period::DatePeriod)
   end
 
   if array === nothing
-    array = Array(definition.cell_type, get_entity(variable).count)
-    fill!(array, definition.cell_default)
+    array = default_array(variable)
   end
   variable.extrapolated_array_by_period[period] = array
   # if trace && used_periods
@@ -162,16 +159,9 @@ end
 
 function calculate(variable::PermanentVariable, period::DatePeriod)
   array = get_array!(variable) do
-    definition = variable.definition
-    if isa(definition, FormulaDefinition)
-      array_handle = definition.formula(variable, period)
-      @assert isa(array_handle, PermanentArrayHandle)
-      return get_array(array_handle, nothing)
-    end
-    array = Array(definition.cell_type, get_entity(variable).count)
-    fill!(array, definition.cell_default)
-    variable.array = array
-    return array
+    array_handle = variable.definition.formula(variable, period)
+    @assert isa(array_handle, PermanentArrayHandle)
+    return get_array(array_handle, nothing)
   end
   return PermanentArrayHandle(variable)
 end
@@ -182,6 +172,13 @@ calculate(variable::Variable) = calculate(variable, variable.simulation.period)
 macro calculate(new_variable, period)
   global variable
   return esc(:($new_variable = calculate(variable.simulation, $(string(new_variable)), $period)))
+end
+
+
+function default_array(variable::Variable)
+  definition = variable.definition
+  array = Array(definition.cell_type, get_entity(variable).count)
+  fill!(array, definition.cell_default)
 end
 
 

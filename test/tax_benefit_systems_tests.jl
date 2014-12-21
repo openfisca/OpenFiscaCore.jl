@@ -30,21 +30,21 @@ PARENT2 = Role(2)
 # Input variables
 
 
-age_en_mois = BareVariableDefinition("age_en_mois", individu, Month, label = "Âge (en nombre de mois)")
-birth = BareVariableDefinition("birth", individu, Date, label = "Date de naissance", permanent = true)
-depcom = BareVariableDefinition("depcom", famille, String,
+age_en_mois = VariableDefinition("age_en_mois", individu, Month, label = "Âge (en nombre de mois)")
+birth = VariableDefinition("birth", individu, Date, label = "Date de naissance", permanent = true)
+depcom = VariableDefinition("depcom", famille, String,
   label = """Code INSEE "depcom" de la commune de résidence de la famille""")
-id_famille = BareVariableDefinition("id_famille", individu, Unsigned, label = "Identifiant de la famille",
+id_famille = VariableDefinition("id_famille", individu, Unsigned, label = "Identifiant de la famille",
   permanent = true)
-role_famille = BareVariableDefinition("role_dans_famille", individu, Role, label = "Rôle dans la famille",
+role_famille = VariableDefinition("role_dans_famille", individu, Role, label = "Rôle dans la famille",
   permanent = true)
-salaire_brut = BareVariableDefinition("salaire_brut", individu, Float32, label = "Salaire brut")
+salaire_brut = VariableDefinition("salaire_brut", individu, Float32, label = "Salaire brut")
 
 
 # Formulas
 
 
-age = FormulaDefinition("age", individu, Year, label = "Âge (en nombre d'années)") do variable, period
+age = VariableDefinition("age", individu, Year, label = "Âge (en nombre d'années)") do variable, period
   @get_array_handle(age_en_mois, period, nothing)
   return set_array_handle(variable, period,
     age_en_mois === nothing
@@ -53,7 +53,7 @@ age = FormulaDefinition("age", individu, Year, label = "Âge (en nombre d'année
 end
 
 
-dom_tom = FormulaDefinition("dom_tom", famille, Bool, label = "La famille habite-t-elle les DOM-TOM ?"
+dom_tom = VariableDefinition("dom_tom", famille, Bool, label = "La famille habite-t-elle les DOM-TOM ?"
 ) do variable, period
   period = YearPeriod(firstdayofyear(period.start))
   @calculate(depcom, period)
@@ -61,13 +61,13 @@ dom_tom = FormulaDefinition("dom_tom", famille, Bool, label = "La famille habite
 end
 
 
-dom_tom_individu = FormulaDefinition("dom_tom_individu", individu, Bool,
+dom_tom_individu = VariableDefinition("dom_tom_individu", individu, Bool,
   label = "La personne habite-t-elle les DOM-TOM ?") do variable, period
   return set_array_handle(variable, period, entity_to_person(@calculate(dom_tom, period)))
 end
 
 
-revenu_disponible = FormulaDefinition("revenu_disponible", individu, Float32, label = "Revenu disponible de la famille"
+revenu_disponible = VariableDefinition("revenu_disponible", individu, Float32, label = "Revenu disponible de la famille"
 ) do variable, period
   period = YearPeriod(firstdayofyear(period.start))
   @calculate(rsa, period)
@@ -76,7 +76,7 @@ revenu_disponible = FormulaDefinition("revenu_disponible", individu, Float32, la
 end
 
 
-rsa = FormulaDefinition("rsa", individu, Float32, label = "RSA") do variable, period
+rsa = VariableDefinition("rsa", individu, Float32, label = "RSA") do variable, period
   period = MonthPeriod(firstdayofmonth(period.start))
   date = period.start
   if date < Date(2010, 1, 1)
@@ -92,7 +92,7 @@ rsa = FormulaDefinition("rsa", individu, Float32, label = "RSA") do variable, pe
 end
 
 
-salaire_imposable = FormulaDefinition("salaire_imposable", individu, Float32, label = "Salaire imposable"
+salaire_imposable = VariableDefinition("salaire_imposable", individu, Float32, label = "Salaire imposable"
 ) do variable, period
   period = YearPeriod(firstdayofyear(period.start))
   return set_array_handle(variable, period,
@@ -100,7 +100,7 @@ salaire_imposable = FormulaDefinition("salaire_imposable", individu, Float32, la
 end
 
 
-salaire_net = FormulaDefinition("salaire_net", individu, Float32, label = "Salaire net") do variable, period
+salaire_net = VariableDefinition("salaire_net", individu, Float32, label = "Salaire net") do variable, period
   period = YearPeriod(firstdayofyear(period.start))
   return set_array_handle(variable, period, @calculate(salaire_brut, period) * 0.8)
 end

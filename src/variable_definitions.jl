@@ -20,10 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-abstract VariableDefinition
-
-
-type BareVariableDefinition <: VariableDefinition
+type VariableDefinition
+  formula::Function
   name::String
   entity_definition::EntityDefinition
   cell_type::Type
@@ -32,8 +30,8 @@ type BareVariableDefinition <: VariableDefinition
   period_size_independent::Bool  # When true, value of column doesn't depend from size of period (example: age)
   permanent::Bool  # When true, value of variable doesn't depend from date (example: ID, birth)
 
-  function BareVariableDefinition(name, entity_definition, cell_type; cell_default = nothing, label = name,
-      period_size_independent = false, permanent = false)
+  function VariableDefinition(formula, name::String, entity_definition::EntityDefinition, cell_type;
+      cell_default = nothing, label = name, period_size_independent = false, permanent = false)
     if cell_default === nothing
       cell_default =
         cell_type <: Date ? Date(1970, 1, 1) :
@@ -51,26 +49,13 @@ type BareVariableDefinition <: VariableDefinition
         || cell_type <: Month || cell_type <: Role || cell_type <: String || cell_type <: Unsigned || cell_type <: Year)
       period_size_independent = true
     end
-    return new(name, entity_definition, cell_type, cell_default, label, period_size_independent, permanent)
+    return new(formula, name, entity_definition, cell_type, cell_default, label, period_size_independent, permanent)
   end
 end
 
-
-type FormulaDefinition <: VariableDefinition
-  formula::Function
-  name::String
-  entity_definition::EntityDefinition
-  cell_type::Type
-  label::String
-  period_size_independent::Bool  # When true, value of column doesn't depend from size of period (example: age)
-  permanent::Bool  # When true, value of variable doesn't depend from date (example: ID, birth)
-
-  function FormulaDefinition(formula, name, entity_definition, cell_type; label = name, period_size_independent = false,
-      permanent = false)
-    if !period_size_independent && (permanent || cell_type <: Date || cell_type <: Day || cell_type <: Int
-        || cell_type <: Month || cell_type <: Role || cell_type <: String || cell_type <: Unsigned || cell_type <: Year)
-      period_size_independent = true
-    end
-    return new(formula, name, entity_definition, cell_type, label, period_size_independent, permanent)
-  end
+VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type; cell_default = nothing, label = name,
+  period_size_independent = false, permanent = false) = VariableDefinition(name, entity_definition, cell_type,
+  cell_default = cell_default, label = label, period_size_independent = period_size_independent, permanent = permanent
+) do variable, period
+  return set_array_handle(variable, period, default_array(variable))
 end
