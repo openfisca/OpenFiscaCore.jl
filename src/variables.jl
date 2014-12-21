@@ -57,7 +57,7 @@ function calculate(variable::PeriodicVariable, period::DatePeriod)
   if isa(definition, FormulaDefinition)
     formula_period = period
     while true
-      array_handle = definition.func(variable, formula_period)
+      array_handle = definition.formula(variable, formula_period)
       @assert isa(array_handle, PeriodArrayHandle)
       formula_period = array_handle.period
       formula_period = typeof(formula_period)(formula_period.start + unit_type(formula_period)(formula_period.length),
@@ -164,7 +164,7 @@ function calculate(variable::PermanentVariable, period::DatePeriod)
   array = get_array!(variable) do
     definition = variable.definition
     if isa(definition, FormulaDefinition)
-      array_handle = definition.func(variable, period)
+      array_handle = definition.formula(variable, period)
       @assert isa(array_handle, PermanentArrayHandle)
       return get_array(array_handle, nothing)
     end
