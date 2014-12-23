@@ -25,27 +25,33 @@ type TaxBenefitSystem
   person_name::String  # Name of person entity
   variable_definition_by_name::Dict{String, VariableDefinition}
 
-  function TaxBenefitSystem(entities_definition, variables_definition)
-    new(
-      [
-        entity_definition.name => entity_definition
-        for entity_definition in entities_definition
-      ],
-      get_person_name(entities_definition),
-      [
-        variable_definition.name => variable_definition
-        for variable_definition in variables_definition
-      ],
-    )
-  end
+  TaxBenefitSystem(entity_definition_by_name::Dict{String, EntityDefinition},
+    variable_definition_by_name::Dict{String, VariableDefinition}
+  ) = new(
+    entity_definition_by_name,
+    get_person_name(entity_definition_by_name),
+    variable_definition_by_name,
+  )
 end
 
+TaxBenefitSystem(entities_definition::Array{EntityDefinition}, variables_definition::Array{VariableDefinition}
+) = TaxBenefitSystem(
+  [
+    entity_definition.name => entity_definition
+    for entity_definition in entities_definition
+  ],
+  [
+    variable_definition.name => variable_definition
+    for variable_definition in variables_definition
+  ],
+)
 
-function get_person_name(entities_definition::Array{EntityDefinition})
-  for entity_definition in entities_definition
+
+function get_person_name(entity_definition_by_name::Dict{String, EntityDefinition})
+  for (entity_name, entity_definition) in entity_definition_by_name
     if entity_definition.is_person
-      return entity_definition.name
+      return entity_name
     end
   end
-  error("List of entities ", entities_definition, " contains no person entity")
+  error("List of entities ", entity_definition_by_name, " contains no person entity")
 end
