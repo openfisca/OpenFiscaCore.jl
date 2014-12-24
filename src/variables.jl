@@ -44,7 +44,7 @@ function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_
   if array_handle !== nothing
     return array_handle
   end
-  formula_period, array = variable.definition.formula(variable, period)
+  formula_period, array = variable.definition.formula(variable.simulation, variable, period)
   if !accept_other_period && formula_period != period
     error("Requested period $period differs from $formula_period returned by variable $(variable.definition.name).")
   end
@@ -57,7 +57,7 @@ calculate(variable::PeriodicVariable) = calculate(variable, variable.simulation.
 
 function calculate(variable::PermanentVariable)
   array = get_array!(variable) do
-    array = variable.definition.formula(variable)
+    array = variable.definition.formula(variable.simulation, variable)
     set_array_handle(variable, array)
     return array
   end
