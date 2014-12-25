@@ -66,8 +66,8 @@ end
 
 
 macro calculate(new_variable, period)
-  global variable
-  return esc(:($new_variable = calculate(variable.simulation, $(string(new_variable)), $period)))
+  global simulation, variable
+  return esc(:($new_variable = calculate(simulation, $(string(new_variable)), $period)))
 end
 
 
@@ -88,8 +88,8 @@ end
 
 
 macro divide_year(new_variable, period)
-  global variable
-  return esc(:($new_variable = divide_year(variable.simulation, $(string(new_variable)), $period)))
+  global simulation, variable
+  return esc(:($new_variable = divide_year(simulation, $(string(new_variable)), $period)))
 end
 
 
@@ -175,8 +175,8 @@ get_array_handle(variable::PermanentVariable, period::DatePeriod) = get_array_ha
 
 
 macro get_array_handle(new_variable, period, default)
-  global variable
-  return esc(:($new_variable = get_array_handle(variable.simulation, $(string(new_variable)), $period, $default)))
+  global simulation, variable
+  return esc(:($new_variable = get_array_handle(simulation, $(string(new_variable)), $period, $default)))
 end
 
 
@@ -232,8 +232,8 @@ end
 
 
 macro sum_months(new_variable, period)
-  global variable
-  return esc(:($new_variable = sum_months(variable.simulation, $(string(new_variable)), $period)))
+  global simulation, variable
+  return esc(:($new_variable = sum_months(simulation, $(string(new_variable)), $period)))
 end
 
 
