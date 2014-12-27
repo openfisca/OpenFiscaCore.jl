@@ -23,12 +23,12 @@
 module OpenFiscaCore
 
 
-export *, +, .<, @calculate, @divide_year, @get_array_handle, @sum_months, beginswith, calculate, DatePeriod, DayPeriod, days, default_array, divide_year, empty_period, Entity, entity_to_person, EntityDefinition, get_array, get_array_handle, get_entity, get_variable!, intersection, isfinite, length, MonthPeriod, next, PeriodArrayHandle, PermanentArrayHandle, PeriodicVariable, PermanentVariable, real, Role, set_array_handle, Simulation, start, stop_date, sum_months, TaxBenefitSystem, unit_type, VariableDefinition, YearPeriod, zeros
+export *, +, .<, @calculate, @divide_year, @get_array_handle, @sum_months, beginswith, calculate, convert, DatePeriod, DateRangeValue, DayPeriod, days, default_array, divide_year, empty_period, Entity, entity_to_person, EntityDefinition, get_array, get_array_handle, get_entity, get_variable!, intersection, isfinite, length, MonthPeriod, next, Parameter, PeriodArrayHandle, PermanentArrayHandle, PeriodicVariable, PermanentVariable, real, Role, set_array_handle, Simulation, start, stop_date, sum_months, TaxBenefitSystem, unit_type, UnitIntervalFloat32, VariableDefinition, YearPeriod, zeros
 
 
 using Dates
 
-import Base: *, +, .<, beginswith, done, isfinite, length, next, real, start, zeros
+import Base: *, +, .<, beginswith, convert, done, isfinite, length, next, real, start, zeros
 
 
 abstract AbstractSimulation
@@ -39,8 +39,11 @@ include("entities.jl")
 include("periods.jl")
 include("arrays.jl")
 include("array_handles.jl")
+include("parameters.jl")
+include("tax_scales.jl")
 include("variable_definitions.jl")
 include("tax_benefit_systems.jl")
+include("tax_scales.jl")
 include("simulations.jl")
 include("variables.jl")
 
