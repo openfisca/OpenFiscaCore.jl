@@ -23,7 +23,7 @@
 module OpenFiscaCore
 
 
-export *, +, .<, @calculate, @divide_year, @get_array_handle, @sum_months, beginswith, calculate, convert, DatePeriod, DateRangeValue, DayPeriod, days, default_array, divide_year, empty_period, Entity, entity_to_person, EntityDefinition, get_array, get_array_handle, get_entity, get_variable!, intersection, isfinite, length, MonthPeriod, next, Parameter, PeriodArrayHandle, PermanentArrayHandle, PeriodicVariable, PermanentVariable, real, Role, set_array_handle, Simulation, start, stop_date, sum_months, TaxBenefitSystem, unit_type, UnitIntervalFloat32, VariableDefinition, YearPeriod, zeros
+export *, +, .<, @calculate, @divide_year, @get_array_handle, @sum_months, AmountBracket, AmountTaxScale, beginswith, calculate, convert, DatePeriod, DateRangeValue, DayPeriod, days, default_array, divide_year, empty_period, Entity, entity_to_person, EntityDefinition, get_array, get_array_handle, get_entity, get_variable!, intersection, isfinite, length, MonthPeriod, next, Parameter, PeriodArrayHandle, PermanentArrayHandle, PeriodicVariable, PermanentVariable, RateBracket, RateTaxScale, real, Role, set_array_handle, Simulation, start, stop_date, sum_months, TaxBenefitSystem, unit_type, UnitIntervalFloat32, VariableDefinition, YearPeriod, zeros
 
 
 using Dates

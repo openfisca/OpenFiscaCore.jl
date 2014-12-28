@@ -39,6 +39,12 @@ convert(::Type{DateRangeValue{Float32}}, date_range_value::DateRangeValue{Float6
 convert(::Type{DateRangeValue{Int32}}, date_range_value::DateRangeValue{Int64}) = DateRangeValue{Int32}(
   date_range_value.start_date, date_range_value.stop_date, int32(date_range_value.value), date_range_value.comment)
 
+# To remove for Julia 0.4?
+convert(::Type{Union(Array{DateRangeValue{Float32}}, Nothing)}, date_range_values::Array{DateRangeValue{Float64}}) = [
+  convert(DateRangeValue{Float32}, date_range_value)
+  for date_range_value in date_range_values
+]
+
 
 type Parameter{T}
   values::Array{DateRangeValue{T}}

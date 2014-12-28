@@ -20,54 +20,64 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-# abstract AbstractBracket
+abstract AbstractBracket
 # abstract AbstractDatedTaxScale
-# abstract AbstractTaxScale
-#
-#
-# type AmountBracket <: AbstractBracket
-#   amount::DateRangeValue{Float32}[]
-#   base::DateRangeValue{Float32}[]
-#   threshold::DateRangeValue{Float32}[]
-#   comment
-# end
-#
-#
-# type AmountTaxScale <: AbstractTaxScale
-#   brackets::AmountBracket[]
-#   unit
-#   check_start_date  # The first date for which this tax scale (or lack of it) has been verified in legislation
-#   check_stop_date  # The last date for which this tax scale (or lack of it) has been verified in legislation
-#   comment
-# end
-#
-#
+abstract AbstractTaxScale
+
+
+type AmountBracket <: AbstractBracket
+  threshold::Array{DateRangeValue{Float32}}
+  amount::Array{DateRangeValue{Float32}}
+  base::Union(Array{DateRangeValue{Float32}}, Nothing)
+
+  AmountBracket(; threshold = nothing, amount = nothing, base = nothing) = new(threshold, amount, base)
+end
+
+
+type AmountTaxScale <: AbstractTaxScale
+  brackets::Array{AmountBracket}
+  unit::Union(Nothing, String)
+  check_start_date::Union(Date, Nothing)  # The first date for which this tax scale (or lack of it) has been verified in legislation
+  check_stop_date::Union(Date, Nothing)  # The last date for which this tax scale (or lack of it) has been verified in legislation
+  description::Union(Nothing, String)
+  comment::Union(Nothing, String)
+
+  AmountTaxScale(brackets; unit = nothing, check_start_date = nothing, check_stop_date = nothing, description = nothing,
+    comment = nothing) = new(brackets, unit, check_start_date, check_stop_date, description, comment)
+end
+
+
 # DatedAmountTaxScale <: AbstractDatedTaxScale
-#   amounts::Float32[]
-#   thresholds::Float32[]
+#   amounts::Array{Float32}
+#   thresholds::Array{Float32}
 #   # unit ?
 # end
-#
-#
+
+
 # DatedRateTaxtScale <: AbstractDatedTaxScale
-#   rates::Float32[]
-#   thresholds::Float32[]
+#   rates::Array{Float32}
+#   thresholds::Array{Float32}
 #   # unit ?
 # end
 
 
-# type RateBracket <: AbstractBracket
-#   base::DateRangeValue{Float32}[]
-#   threshold::DateRangeValue{Float32}[]
-#   rate::DateRangeValue{Float32}[]
-#   comment
-# end
-#
-#
-# type RateTaxScale <: AbstractTaxScale
-#   brackets::RateBracket[]
-#   unit
-#   check_start_date  # The first date for which this tax scale (or lack of it) has been verified in legislation
-#   check_stop_date  # The last date for which this tax scale (or lack of it) has been verified in legislation
-#   comment
-# end
+type RateBracket <: AbstractBracket
+  threshold::Array{DateRangeValue{Float32}}
+  rate::Array{DateRangeValue{Float32}}
+  base::Union(Array{DateRangeValue{Float32}}, Nothing)
+
+  RateBracket(; threshold = nothing, rate = nothing, base = nothing) = new(threshold, rate, base)
+end
+
+
+type RateTaxScale <: AbstractTaxScale
+  brackets::Array{RateBracket}
+  unit::Union(Nothing, String)
+  check_start_date::Union(Date, Nothing)  # The first date for which this tax scale (or lack of it) has been verified in legislation
+  check_stop_date::Union(Date, Nothing)  # The last date for which this tax scale (or lack of it) has been verified in legislation
+  description::Union(Nothing, String)
+  comment::Union(Nothing, String)
+
+  RateTaxScale(brackets; unit = nothing, check_start_date = nothing, check_stop_date = nothing, description = nothing,
+    comment = nothing) = new(brackets, unit, check_start_date, check_stop_date, description, comment)
+end
