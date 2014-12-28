@@ -47,7 +47,7 @@ convert(::Type{Union(Array{DateRangeValue{Float32}}, Nothing)}, date_range_value
 
 
 type Parameter{T}
-  values::Array{DateRangeValue{T}}
+  value::Array{DateRangeValue{T}}
   # value_type = T = Float32, UnitIntervalFloat32 (between 0 and 1, for percent etc)...
   unit::Union(Nothing, String)
   check_start_date::Union(Date, Nothing)  # The first date for which this parameter (or lack of it) has been verified in legislation
@@ -55,6 +55,44 @@ type Parameter{T}
   description::Union(Nothing, String)
   comment::Union(Nothing, String)
 
-  Parameter(values; unit = nothing, check_start_date = nothing, check_stop_date = nothing, description = nothing,
-    comment = nothing) = new(values, unit, check_start_date, check_stop_date, description, comment)
+  Parameter(value; unit = nothing, check_start_date = nothing, check_stop_date = nothing, description = nothing,
+    comment = nothing) = new(value, unit, check_start_date, check_stop_date, description, comment)
 end
+
+
+function at(date_range_values::Array{DateRangeValue}, date::Date; check_start_date = nothing, check_stop_date = nothing)
+  max_stop_date = nothing
+  max_value = nothing
+  min_start_date = nothing
+  min_value = nothing
+  for date_range_value in date_range_values
+    if date_range_value.start_date <= date <= date_range_value.stop_date
+      return date_range_value.value
+    end
+    if max_stop_date === nothing || date_range_value.stop_date > max_stop_date
+      max_stop_date = date_range_value.stop_date
+      max_value = date_range_value.value
+    end
+    if min_start_date === nothing || date_range_value.start_date < min_start_date
+      min_start_date = date_range_value.start_date
+      min_value = date_range_value.value
+    end
+  end
+  if check_stop_date !== nothing && date > check_stop_date
+    # The requested date is after the end of the legislation. Use the value of the last period, when this
+    # period ends the same day or after the legislation.
+    if max_stop_date !== nothing && max_stop_date >= check_stop_date
+      return max_value
+    end
+  elseif check_start_date !== nothing && date < check_start_date
+    # The requested date is before the beginning of the legislation. Use the value of the first period, when this
+    # period begins the same day or before the legislation.
+    if min_start_date !== nothing && min_start_date <= check_start_date
+      return min_value
+    end
+  end
+  return nothing
+end
+
+at(parameter::Parameter, date::Date) = at(parameter.value, date, check_start_date = parameter.check_start_date,
+  check_stop_date = parameter.check_stop_date)

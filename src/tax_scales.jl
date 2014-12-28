@@ -20,12 +20,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-abstract AbstractBracket
-# abstract AbstractDatedTaxScale
-abstract AbstractTaxScale
+abstract Bracket
+abstract DatedTaxScale
+abstract DatedRateScale <: DatedTaxScale
+abstract TaxScale
+abstract RateScale <: TaxScale
 
 
-type AmountBracket <: AbstractBracket
+# Amount-based tax scales
+
+
+type AmountBracket <: Bracket
   threshold::Array{DateRangeValue{Float32}}
   amount::Array{DateRangeValue{Float32}}
   base::Union(Array{DateRangeValue{Float32}}, Nothing)
@@ -34,7 +39,7 @@ type AmountBracket <: AbstractBracket
 end
 
 
-type AmountTaxScale <: AbstractTaxScale
+type AmountScale <: TaxScale
   brackets::Array{AmountBracket}
   unit::Union(Nothing, String)
   check_start_date::Union(Date, Nothing)  # The first date for which this tax scale (or lack of it) has been verified in legislation
@@ -42,26 +47,36 @@ type AmountTaxScale <: AbstractTaxScale
   description::Union(Nothing, String)
   comment::Union(Nothing, String)
 
-  AmountTaxScale(brackets; unit = nothing, check_start_date = nothing, check_stop_date = nothing, description = nothing,
+  AmountScale(brackets; unit = nothing, check_start_date = nothing, check_stop_date = nothing, description = nothing,
     comment = nothing) = new(brackets, unit, check_start_date, check_stop_date, description, comment)
 end
 
 
-# DatedAmountTaxScale <: AbstractDatedTaxScale
-#   amounts::Array{Float32}
-#   thresholds::Array{Float32}
-#   # unit ?
-# end
+type DatedAmountScale <: DatedTaxScale
+  amounts::Array{Float32}
+  thresholds::Array{Float32}
+  # unit ?
+end
 
 
-# DatedRateTaxtScale <: AbstractDatedTaxScale
-#   rates::Array{Float32}
-#   thresholds::Array{Float32}
-#   # unit ?
-# end
+# Rated-based tax scales
 
 
-type RateBracket <: AbstractBracket
+type DatedLinearAverageRateScale <: DatedRateScale
+  rates::Array{Float32}
+  thresholds::Array{Float32}
+  # unit ?
+end
+
+
+type DatedMarginalRateScale <: DatedRateScale
+  rates::Array{Float32}
+  thresholds::Array{Float32}
+  # unit ?
+end
+
+
+type RateBracket <: Bracket
   threshold::Array{DateRangeValue{Float32}}
   rate::Array{DateRangeValue{Float32}}
   base::Union(Array{DateRangeValue{Float32}}, Nothing)
@@ -70,7 +85,7 @@ type RateBracket <: AbstractBracket
 end
 
 
-type RateTaxScale <: AbstractTaxScale
+type LinearAverageRateScale <: RateScale
   brackets::Array{RateBracket}
   unit::Union(Nothing, String)
   check_start_date::Union(Date, Nothing)  # The first date for which this tax scale (or lack of it) has been verified in legislation
@@ -78,6 +93,80 @@ type RateTaxScale <: AbstractTaxScale
   description::Union(Nothing, String)
   comment::Union(Nothing, String)
 
-  RateTaxScale(brackets; unit = nothing, check_start_date = nothing, check_stop_date = nothing, description = nothing,
-    comment = nothing) = new(brackets, unit, check_start_date, check_stop_date, description, comment)
+  LinearAverageRateScale(brackets; unit = nothing, check_start_date = nothing, check_stop_date = nothing,
+    description = nothing, comment = nothing) = new(brackets, unit, check_start_date, check_stop_date, description,
+    comment)
+end
+
+
+type MarginalRateScale <: RateScale
+  brackets::Array{RateBracket}
+  unit::Union(Nothing, String)
+  check_start_date::Union(Date, Nothing)  # The first date for which this tax scale (or lack of it) has been verified in legislation
+  check_stop_date::Union(Date, Nothing)  # The last date for which this tax scale (or lack of it) has been verified in legislation
+  description::Union(Nothing, String)
+  comment::Union(Nothing, String)
+
+  MarginalRateScale(brackets; unit = nothing, check_start_date = nothing, check_stop_date = nothing,
+    description = nothing, comment = nothing) = new(brackets, unit, check_start_date, check_stop_date, description,
+    comment)
+end
+
+
+# Functions
+
+
+function at(tax_scale::AmountScale, date::Date)
+  thresholds = DateRangeValue{Float32}[]
+  amounts = DateRangeValue{Float32}[]
+  for bracket in tax_scale.brackets
+    threshold = at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
+      check_stop_date = tax_scale.check_stop_date)
+    if threshold === nothing
+      continue
+    end
+
+    amount = at(bracket.amount, date, check_start_date = tax_scale.check_start_date,
+      check_stop_date = tax_scale.check_stop_date)
+    if amount === nothing
+      continue
+    end
+
+    push!(thresholds, threshold)
+    push!(amounts, amount)
+  end
+  return DatedAmountScale(thresholds, amounts)  # TODO: option?
+end
+
+
+function at(tax_scale::RateScale, date::Date)
+  thresholds = DateRangeValue{Float32}[]
+  rates = DateRangeValue{Float32}[]
+  for bracket in tax_scale.brackets
+    threshold = at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
+      check_stop_date = tax_scale.check_stop_date)
+    if threshold === nothing
+      continue
+    end
+
+    rate = at(bracket.rate, date, check_start_date = tax_scale.check_start_date,
+      check_stop_date = tax_scale.check_stop_date)
+    if rate === nothing
+      continue
+    end
+
+    base = at(bracket.base, date, check_start_date = tax_scale.check_start_date,
+      check_stop_date = tax_scale.check_stop_date)
+    if base !== nothing
+      rate *= base
+    end
+
+    push!(thresholds, threshold)
+    push!(rates, rate)
+  end
+  if isa(tax_scale, LinearAverageRateScale)
+    return DatedLinearAverageRateScale(thresholds, rates)  # TODO: option?, unit?
+  end
+  tax_scale::MarginalRateScale
+  return DatedMarginalRateScale(thresholds, rates)  # TODO: option?
 end

@@ -70,7 +70,7 @@ get_person(simulation::Simulation) = get_entity(simulation, simulation.tax_benef
 
 
 function get_variable!(simulation::Simulation, variable_name)
-  get!(simulation.variable_by_name, variable_name) do
+  return get!(simulation.variable_by_name, variable_name) do
     definition = simulation.tax_benefit_system.variable_definition_by_name[variable_name]
     return (definition.permanent ? PermanentVariable : PeriodicVariable)(simulation, definition)
   end
@@ -91,3 +91,12 @@ sum_months(simulation::Simulation, variable_name, period) = sum_months(get_varia
 
 sum_months(simulation::Simulation, variable_name) = sum_months(
   get_variable!(simulation, variable_name), simulation.period)
+
+
+# function tax_scale_at(simulation::Simulation, tax_scale_name, date; reference = false)
+#   if reference
+#     reference_legislation_leaf_by_name = get!(simulation.reference_legislation_leaf_by_name_by_date, tax_scale_name) do
+#       return Union(TaxRate, Parameter)
+#     end
+#   end
+# end
