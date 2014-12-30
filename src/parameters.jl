@@ -23,7 +23,7 @@
 typealias UnitIntervalFloat32 Float32  # Float32 between 0 and 1, for percent, etc
 
 
-type DateRangeValue{T}
+immutable DateRangeValue{T}
   start_date::Union(Date, Nothing)
   stop_date::Union(Date, Nothing)
   value::T
@@ -46,7 +46,7 @@ convert(::Type{Union(Array{DateRangeValue{Float32}}, Nothing)}, date_range_value
 ]
 
 
-type Parameter{T}
+immutable Parameter{T}
   value::Array{DateRangeValue{T}}
   # value_type = T = Float32, UnitIntervalFloat32 (between 0 and 1, for percent etc)...
   unit::Union(Nothing, String)

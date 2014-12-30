@@ -30,7 +30,7 @@ abstract RateScale <: TaxScale
 # Amount-based tax scales
 
 
-type AmountBracket <: Bracket
+immutable AmountBracket <: Bracket
   threshold::Array{DateRangeValue{Float32}}
   amount::Array{DateRangeValue{Float32}}
   base::Union(Array{DateRangeValue{Float32}}, Nothing)
@@ -39,7 +39,7 @@ type AmountBracket <: Bracket
 end
 
 
-type AmountScale <: TaxScale
+immutable AmountScale <: TaxScale
   brackets::Array{AmountBracket}
   unit::Union(Nothing, String)
   check_start_date::Union(Date, Nothing)  # The first date for which this tax scale (or lack of it) has been verified in legislation
@@ -52,7 +52,7 @@ type AmountScale <: TaxScale
 end
 
 
-type DatedAmountScale <: DatedTaxScale
+immutable DatedAmountScale <: DatedTaxScale
   amounts::Array{Float32}
   thresholds::Array{Float32}
   # unit ?
@@ -62,21 +62,21 @@ end
 # Rated-based tax scales
 
 
-type DatedLinearAverageRateScale <: DatedRateScale
+immutable DatedLinearAverageRateScale <: DatedRateScale
   rates::Array{Float32}
   thresholds::Array{Float32}
   # unit ?
 end
 
 
-type DatedMarginalRateScale <: DatedRateScale
+immutable DatedMarginalRateScale <: DatedRateScale
   rates::Array{Float32}
   thresholds::Array{Float32}
   # unit ?
 end
 
 
-type RateBracket <: Bracket
+immutable RateBracket <: Bracket
   threshold::Array{DateRangeValue{Float32}}
   rate::Array{DateRangeValue{Float32}}
   base::Union(Array{DateRangeValue{Float32}}, Nothing)
@@ -85,7 +85,7 @@ type RateBracket <: Bracket
 end
 
 
-type LinearAverageRateScale <: RateScale
+immutable LinearAverageRateScale <: RateScale
   brackets::Array{RateBracket}
   unit::Union(Nothing, String)
   check_start_date::Union(Date, Nothing)  # The first date for which this tax scale (or lack of it) has been verified in legislation
@@ -99,7 +99,7 @@ type LinearAverageRateScale <: RateScale
 end
 
 
-type MarginalRateScale <: RateScale
+immutable MarginalRateScale <: RateScale
   brackets::Array{RateBracket}
   unit::Union(Nothing, String)
   check_start_date::Union(Date, Nothing)  # The first date for which this tax scale (or lack of it) has been verified in legislation
