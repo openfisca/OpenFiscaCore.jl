@@ -23,7 +23,7 @@
 module OpenFiscaCore
 
 
-export *, +, .<, @calculate, @divide_year, @get_array_handle, @sum_months, AmountBracket, AmountScale, apply_tax_scale, beginswith, calculate, convert, DatedAmountScale, DatedLinearAverageRateScale, DatedMarginalRateScale, DatedRateScale, DatedTaxScale, DatePeriod, DateRangeValue, DayPeriod, days, default_array, divide_year, empty_period, Entity, entity_to_person, EntityDefinition, get_array, get_array_handle, get_entity, get_variable!, intersection, isfinite, length, LinearAverageRateScale, MarginalRateScale, MonthPeriod, next, Parameter, PeriodArrayHandle, PermanentArrayHandle, PeriodicVariable, PermanentVariable, RateBracket, RateScale, real, Role, set_array_handle, Simulation, start, stop_date, sum_months, TaxBenefitSystem, TaxScale, unit_type, UnitIntervalFloat32, VariableDefinition, YearPeriod, zeros
+export *, +, .<, @at, @calculate, @divide_year, @sum_months, AmountBracket, AmountScale, apply_tax_scale, ArrayHandle, at, beginswith, calculate, convert, DatedAmountScale, DatedLinearAverageRateScale, DatedMarginalRateScale, DatedOrPermanentVariable, DatedRateScale, DatedTaxScale, DatedVariable, DatePeriod, DateRangeValue, DayPeriod, days, default_array, divide_year, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, get_array, get_entity, get_variable!, intersection, isfinite, length, LinearAverageRateScale, MarginalRateScale, MonthPeriod, next, Parameter, PeriodicVariable, PermanentVariable, RateBracket, RateScale, real, Role, set_array, Simulation, start, stop_date, sum_months, TaxBenefitSystem, TaxScale, unit_type, UnitIntervalFloat32, VariableDefinition, YearPeriod, zeros
 
 
 using Dates
@@ -32,13 +32,22 @@ import Base: *, +, .<, beginswith, convert, done, isfinite, length, next, real, 
 
 
 abstract AbstractSimulation
+abstract DatedVariable
+abstract EntityArray
 abstract Variable
+
+abstract PeriodicVariable <: Variable
+abstract PermanentVariable <: Variable
+
+typealias DatedOrPermanentVariable Union(DatedVariable, PermanentVariable)
+typealias ArrayHandle Union(DatedVariable, EntityArray, PermanentVariable)
 
 
 include("entities.jl")
 include("periods.jl")
 include("arrays.jl")
 include("array_handles.jl")
+include("entity_arrays.jl")
 include("parameters.jl")
 include("tax_scales.jl")
 include("variable_definitions.jl")

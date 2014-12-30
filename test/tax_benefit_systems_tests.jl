@@ -45,7 +45,7 @@ salaire_brut = VariableDefinition("salaire_brut", individu, Float32, label = "Sa
 
 
 age = VariableDefinition("age", individu, Year, label = "Âge (en nombre d'années)") do simulation, variable, period
-  @get_array_handle(age_en_mois, period, nothing)
+  @at(age_en_mois, period, nothing)
   return period, (age_en_mois === nothing
     ? Year[Year(period.start) - Year(birth_cell) for birth_cell in @calculate(birth, period)]
     : Year[Year(int(div(cell, 12))) for cell in age_en_mois])
@@ -140,9 +140,9 @@ famille.step_size = 1
 individu = get_entity(simulation, "individu")
 individu.count = 2
 individu.step_size = 2
-set_array_handle(simulation, "birth", [Date(1973, 1, 1), Date(1974, 1, 1)])
-set_array_handle(simulation, "id_famille", [1, 1])
-set_array_handle(simulation, "role_dans_famille", [PARENT1, PARENT2])
+set_array(simulation, "birth", [Date(1973, 1, 1), Date(1974, 1, 1)])
+set_array(simulation, "id_famille", [1, 1])
+set_array(simulation, "role_dans_famille", [PARENT1, PARENT2])
 @test_approx_eq(get_array(calculate(simulation, "age")), [Year(40), Year(39)])
 
 simulation = Simulation(tax_benefit_system, YearPeriod(2013))
@@ -153,9 +153,9 @@ famille.step_size = 1
 individu = get_entity(simulation, "individu")
 individu.count = 2
 individu.step_size = 2
-set_array_handle(simulation, "age_en_mois", [Month(40 * 12 + 11), Month(39 * 12)])
-set_array_handle(simulation, "id_famille", [1, 1])
-set_array_handle(simulation, "role_dans_famille", [PARENT1, PARENT2])
+set_array(simulation, "age_en_mois", [Month(40 * 12 + 11), Month(39 * 12)])
+set_array(simulation, "id_famille", [1, 1])
+set_array(simulation, "role_dans_famille", [PARENT1, PARENT2])
 @test_approx_eq(get_array(calculate(simulation, "age")), [Year(40), Year(39)])
 
 
@@ -168,10 +168,10 @@ function check_revenu_disponible(year, depcom, expected_revenu_disponible)
   individu = get_entity(simulation, "individu")
   individu.count = 6
   individu.step_size = 2
-  set_array_handle(simulation, "depcom", [depcom, depcom, depcom])
-  set_array_handle(simulation, "id_famille", [1, 1, 2, 2, 3, 3])
-  set_array_handle(simulation, "role_dans_famille", [PARENT1, PARENT2, PARENT1, PARENT2, PARENT1, PARENT2])
-  set_array_handle(simulation, "salaire_brut", [0.0, 0.0, 50000.0, 0.0, 100000.0, 0.0])
+  set_array(simulation, "depcom", [depcom, depcom, depcom])
+  set_array(simulation, "id_famille", [1, 1, 2, 2, 3, 3])
+  set_array(simulation, "role_dans_famille", [PARENT1, PARENT2, PARENT1, PARENT2, PARENT1, PARENT2])
+  set_array(simulation, "salaire_brut", [0.0, 0.0, 50000.0, 0.0, 100000.0, 0.0])
   @test_approx_eq(get_array(calculate(simulation, "revenu_disponible")), expected_revenu_disponible)
 end
 

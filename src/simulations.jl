@@ -41,6 +41,13 @@ Simulation(tax_benefit_system, period; trace = false) = Simulation(tax_benefit_s
   trace = trace)
 
 
+at(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),
+  default)
+
+at(simulation::Simulation, variable_name, period, default) = at(get_variable!(simulation, variable_name), period,
+  default)
+
+
 calculate(simulation::Simulation, variable_name, period) = calculate(get_variable!(simulation, variable_name), period)
 
 calculate(simulation::Simulation, variable_name) = calculate(
@@ -54,13 +61,6 @@ divide_year(simulation::Simulation, variable_name) = divide_year(
   get_variable!(simulation, variable_name), simulation.period)
 
 
-get_array_handle(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),
-  default)
-
-get_array_handle(simulation::Simulation, variable_name, period, default) = get_array_handle(
-  get_variable!(simulation, variable_name), period, default)
-
-
 get_entity(simulation::Simulation, definition::EntityDefinition) = simulation.entity_by_name[definition.name]
 
 get_entity(simulation::Simulation, name::String) = simulation.entity_by_name[name]
@@ -72,18 +72,18 @@ get_person(simulation::Simulation) = get_entity(simulation, simulation.tax_benef
 function get_variable!(simulation::Simulation, variable_name)
   return get!(simulation.variable_by_name, variable_name) do
     definition = simulation.tax_benefit_system.variable_definition_by_name[variable_name]
-    return (definition.permanent ? PermanentVariable : PeriodicVariable)(simulation, definition)
+    return (definition.permanent ? ConcretePermanentVariable : ConcretePeriodicVariable)(simulation, definition)
   end
 end
 
 
-set_array_handle(simulation::Simulation, variable_name, period::DatePeriod, array::Array) = set_array_handle(
+set_array(simulation::Simulation, variable_name, period::DatePeriod, array::Array) = set_array(
   get_variable!(simulation, variable_name), period, array)
 
-set_array_handle(simulation::Simulation, variable_name, array_handle::ArrayHandle) = set_array_handle(
+set_array(simulation::Simulation, variable_name, array_handle::DatedOrPermanentVariable) = set_array(
   get_variable!(simulation, variable_name), array_handle)
 
-set_array_handle(simulation::Simulation, variable_name, array::Array) = set_array_handle(
+set_array(simulation::Simulation, variable_name, array::Array) = set_array(
   get_variable!(simulation, variable_name), array)
 
 

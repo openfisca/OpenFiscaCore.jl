@@ -20,35 +20,65 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-type PeriodicVariable <: Variable
+type ConcretePeriodicVariable <: PeriodicVariable
   simulation::AbstractSimulation
   definition::VariableDefinition
   array_by_period::Dict{DatePeriod, Array}
 end
 
-PeriodicVariable(simulation, definition) = PeriodicVariable(simulation, definition, Dict{DatePeriod, Array}())
+ConcretePeriodicVariable(simulation, definition) = ConcretePeriodicVariable(simulation, definition, Dict{DatePeriod, Array}())
 
 
-type PermanentVariable <: Variable
+type ConcreteDatedVariable <: DatedVariable
+  variable::PeriodicVariable
+  period::DatePeriod
+end
+
+
+type ConcretePermanentVariable <: PermanentVariable
   # A permanent variable is a variable whose value doesn't depend from date (example: ID, birth)
   simulation::Simulation
   definition::VariableDefinition
   array::Array
 end
 
-PermanentVariable(simulation, definition) = PermanentVariable(simulation, definition, [])
+ConcretePermanentVariable(simulation, definition) = ConcretePermanentVariable(simulation, definition, [])
+
+
+function at(variable::PeriodicVariable, period::DatePeriod, default)
+  array = get_array(variable, period, nothing)
+  return array === nothing ? default : ConcreteDatedVariable(variable, period)
+end
+
+at(variable::PeriodicVariable, default) = at(variable, variable.simulation.period, default)
+
+function at(variable::PeriodicVariable, period::DatePeriod)
+  dated_variable = at(variable, period, nothing)
+  if dated_variable === nothing
+    throw(KeyError(period))
+  end
+  return dated_variable
+end
+
+at(variable::PeriodicVariable) = at(variable, variable.simulation.period)
+
+
+macro at(new_variable, period, default)
+  global simulation, variable
+  return esc(:($new_variable = at(simulation, $(string(new_variable)), $period, $default)))
+end
 
 
 function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_period = false)
-  array_handle = get_array_handle(variable, period, nothing)
-  if array_handle !== nothing
-    return array_handle
+  dated_variable = at(variable, period, nothing)
+  if dated_variable !== nothing
+    return dated_variable
   end
-  formula_period, array = variable.definition.formula(variable.simulation, variable, period)
+  formula_period, array_handle = variable.definition.formula(variable.simulation, variable, period)
   if !accept_other_period && formula_period != period
     error("Requested period $period differs from $formula_period returned by variable $(variable.definition.name).")
   end
-  return set_array_handle(variable, formula_period, array)
+  return set_array(variable, formula_period, get_array(array_handle))
 end
 
 calculate(variable::PermanentVariable, period::DatePeriod) = calculate(variable)
@@ -57,11 +87,12 @@ calculate(variable::PeriodicVariable) = calculate(variable, variable.simulation.
 
 function calculate(variable::PermanentVariable)
   array = get_array!(variable) do
-    array = variable.definition.formula(variable.simulation, variable)
-    set_array_handle(variable, array)
+    array_handle = variable.definition.formula(variable.simulation, variable)
+    array = get_array(array_handle)
+    set_array(variable, array)
     return array
   end
-  return PermanentArrayHandle(variable)
+  return variable
 end
 
 
@@ -79,11 +110,11 @@ end
 
 
 function divide_year(variable::PeriodicVariable, period::MonthPeriod)
-  array_handle = calculate(variable, period, accept_other_period = true)
-  if !isa(array_handle.period, YearPeriod)
+  dated_variable = calculate(variable, period, accept_other_period = true)
+  if !isa(dated_variable.period, YearPeriod)
     error("Requested a year period. Got $formula_period returned by variable $(variable.definition.name).")
   end
-  return get_array(array_handle) ./ (12 * array_handle.period.length)
+  return ConcreteEntityArray(get_entity(variable), get_array(dated_variable) ./ (12 * dated_variable.period.length))
 end
 
 
@@ -92,6 +123,41 @@ macro divide_year(new_variable, period)
   return esc(:($new_variable = divide_year(simulation, $(string(new_variable)), $period)))
 end
 
+
+entity_to_person(array_handle::DatedOrPermanentVariable, role::Role) = entity_to_person(array_handle, Role[role])
+
+function entity_to_person(array_handle::DatedOrPermanentVariable, roles::Array{Role})
+  array = get_array(array_handle)
+  period = array_handle.period
+  entity = get_entity(array_handle)
+  @assert !is_person(entity)
+  simulation = entity.simulation
+  person = get_person(simulation)
+  variable_definition = get_variable(array_handle).definition
+  if roles == ALL_ROLES
+    person_array = variable_definition.cell_type[
+      array[index_cell]
+      for index_cell in get_array(get_index_variable(entity), period)
+    ]
+  else
+    cell_default = variable_definition.cell_default
+    person_array = variable_definition.cell_type[
+      role_cell in roles ? array[index_cell] : cell_default
+      for (index_cell, role_cell) in zip(
+        get_array(get_index_variable(entity)),
+        get_array(get_role_variable(entity), period),
+      )
+    ]
+  end
+  return ConcreteEntityArray(entity, person_array)
+end
+
+entity_to_person(array_handle::DatedOrPermanentVariable) = entity_to_person(array_handle, ALL_ROLES)
+
+
+get_array(dated_variable::DatedVariable, default) = get_array(dated_variable.variable, dated_variable.period, default)
+
+get_array(dated_variable::DatedVariable) = get_array(dated_variable.variable, dated_variable.period)
 
 get_array(variable::PeriodicVariable, period::DatePeriod, default) = get(variable.array_by_period, period, default)
 
@@ -139,77 +205,35 @@ function get_array!(func::Function, variable::PermanentVariable)
 end
 
 
-function get_array_handle(variable::PeriodicVariable, period::DatePeriod, default)
-  array = get_array(variable, period, nothing)
-  return array === nothing ? default : PeriodArrayHandle(variable, period)
-end
-
-get_array_handle(variable::PeriodicVariable, default) = get_array_handle(variable, variable.simulation.period, default)
-
-function get_array_handle(variable::PeriodicVariable, period::DatePeriod)
-  array_handle = get_array_handle(variable, period, nothing)
-  if array_handle === nothing
-    throw(KeyError(period))
-  end
-  return array_handle
-end
-
-get_array_handle(variable::PeriodicVariable) = get_array_handle(variable, variable.simulation.period)
-
-function get_array_handle(variable::PermanentVariable, default)
-  array = get_array(variable, nothing)
-  return array === nothing ? default : PermanentArrayHandle(variable)
-end
-
-get_array_handle(variable::PermanentVariable, period::DatePeriod, default) = get_array_handle(variable, default)
-
-function get_array_handle(variable::PermanentVariable)
-  array_handle = get_array_handle(variable, nothing)
-  if array_handle === nothing
-    throw(KeyError(period))
-  end
-  return array_handle
-end
-
-get_array_handle(variable::PermanentVariable, period::DatePeriod) = get_array_handle(variable)
-
-
-macro get_array_handle(new_variable, period, default)
-  global simulation, variable
-  return esc(:($new_variable = get_array_handle(simulation, $(string(new_variable)), $period, $default)))
-end
-
+get_entity(dated_variable::DatedVariable) = get_entity(dated_variable.variable)
 
 get_entity(variable::Variable) = get_entity(variable.simulation, variable.definition.entity_definition)
 
 
-function set_array_handle(variable::PeriodicVariable, period::DatePeriod, array::Array)
+get_variable(dated_variable::DatedVariable) = dated_variable.variable
+
+get_variable(variable::PermanentVariable) = variable
+
+
+function set_array(variable::PeriodicVariable, period::DatePeriod, array::Array)
   @assert length(array) == get_entity(variable).count
   variable.array_by_period[period] = array
-  return PeriodArrayHandle(variable, period)
+  return ConcreteDatedVariable(variable, period)
 end
 
-function set_array_handle(variable::PeriodicVariable, array_handle::PeriodArrayHandle)
-  array = get_array(array_handle)
+function set_array(variable::PeriodicVariable, dated_variable::DatedVariable)
+  array = get_array(dated_variable)
   @assert length(array) == get_entity(variable).count
-  variable.array_by_period[array_handle.period] = array
-  return array_handle
+  variable.array_by_period[dated_variable.period] = array
+  return dated_variable
 end
 
-set_array_handle(variable::PeriodicVariable, array::Array) = set_array_handle(variable, variable.simulation.period,
-  array)
+set_array(variable::PeriodicVariable, array::Array) = set_array(variable, variable.simulation.period, array)
 
-function set_array_handle(variable::PermanentVariable, array_handle::PermanentArrayHandle)
-  array = get_array(array_handle)
+function set_array(variable::PermanentVariable, array::Array)
   @assert length(array) == get_entity(variable).count
   variable.array = array
-  return array_handle
-end
-
-function set_array_handle(variable::PermanentVariable, array::Array)
-  @assert length(array) == get_entity(variable).count
-  variable.array = array
-  return PermanentArrayHandle(variable)
+  return variable
 end
 
 
@@ -224,10 +248,10 @@ function sum_months(variable::PeriodicVariable, period::YearPeriod)
       year += 1
     end
     month_period = MonthPeriod(Date(year, month, start_day))
-    array_handle = calculate(variable, month_period)
-    array += get_array(array_handle)
+    dated_variable = calculate(variable, month_period)
+    array += get_array(dated_variable)
   end
-  return array
+  return ConcreteEntityArray(get_entity(variable), array)
 end
 
 
