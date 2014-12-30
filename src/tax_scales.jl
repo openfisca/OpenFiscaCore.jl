@@ -116,6 +116,41 @@ end
 # Functions
 
 
+apply_tax_scale(tax_scale::DatedTaxScale, array_handle::ArrayHandle) = apply_tax_scale(tax_scale, get_array(
+  array_handle))
+
+function apply_tax_scale(tax_scale::DatedAmountScale, array::Array{Number})
+  base = repeat(array, outer = [1, length(tax_scale.thresholds)])
+  thresholds = repeat(hcat(tax_scale.thresholds', Inf), outer = [length(array), 1])
+  a = min(base, thresholds[:, 2:end]) - thresholds[:, 1:end - 1]
+  return (a .> 0) * tax_scale.amounts
+end
+
+function apply_tax_scale(tax_scale::DatedLinearAverageRateScale, array::Array{Number})
+  if length(tax_scale.rates) == 1
+    return array * tax_scale.rates[1]
+  end
+
+  tiled_base = repeat(array, outer = [1, length(tax_scale.thresholds) - 1])
+  tiled_thresholds = repeat(tax_scale.thresholds', (length(array), 1))
+  bracket_dummy = (tiled_base .>= tiled_thresholds[:, 1:end - 1]) * (tiled_base .< tiled_thresholds[:, 2:end])
+  rate_slope = (tax_scale.rates[2:end] - tax_scale.rates[1:end - 1])
+    ./ (tax_scale.thresholds[2:end] - tax_scale.thresholds[1:end - 1])
+  average_rate_slope = bracket_dummy * rate_slope
+
+  bracket_average_start_rate = bracket_dummy * tax_scale.rates[1:end - 1]
+  bracket_threshold = bracket_dummy * tax_scale.thresholds[1:end - 1]
+  return array .* (bracket_average_start_rate + (array - bracket_threshold) * average_rate_slope)
+end
+
+function apply_tax_scale(tax_scale::DatedMarginalRateScale, array::Array{Number})
+  base = repeat(array, outer = [1, length(tax_scale.thresholds)])
+  thresholds = repeat(hcat(tax_scale.thresholds', Inf), outer = [length(array), 1])
+  a = max(min(base, thresholds[:, 2:end]) - thresholds[:, 1:end - 1], 0)
+  return a * tax_scale.amounts
+end
+
+
 function at(tax_scale::AmountScale, date::Date)
   thresholds = DateRangeValue{Float32}[]
   amounts = DateRangeValue{Float32}[]
