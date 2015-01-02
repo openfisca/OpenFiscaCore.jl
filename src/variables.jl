@@ -105,7 +105,7 @@ end
 function default_array(variable::Variable)
   definition = variable.definition
   array = Array(definition.cell_type, get_entity(variable).count)
-  fill!(array, definition.cell_default)
+  return fill!(array, definition.cell_default)
 end
 
 
