@@ -32,11 +32,12 @@ type VariableDefinition
   permanent::Bool  # When true, value of variable doesn't depend from date (example: ID, birth)
   start_date
   stop_date
+  url
   values
 
   function VariableDefinition(formula, name::String, entity_definition::EntityDefinition, cell_type;
       cell_default = nothing, cell_format = nothing, cerfa_field = nothing, label = name, permanent = false,
-      start_date = nothing, stop_date = nothing, values = nothing)
+      start_date = nothing, stop_date = nothing, url = nothing, values = nothing)
     if cell_default === nothing
       cell_default =
         cell_type <: Date ? Date(1970, 1, 1) :
@@ -51,15 +52,15 @@ type VariableDefinition
         error("Unknown default for type ", cell_type)
     end
     return new(formula, name, entity_definition, cell_type, cell_format, cell_default, cerfa_field, label, permanent,
-      start_date, stop_date, values)
+      start_date, stop_date, url, values)
   end
 end
 
 function VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type; cell_default = nothing,
     cell_format = nothing, cerfa_field = nothing, label = name, permanent = false, start_date = nothing,
-    stop_date = nothing, values = nothing)
+    stop_date = nothing, url = nothing, values = nothing)
   formula = permanent ? variable -> default_array(variable) : (variable, period) -> (period, default_array(variable))
   return VariableDefinition(formula, name, entity_definition, cell_type, cell_default = cell_default,
     cell_format = cell_format, cerfa_field = cerfa_field, label = label, permanent = permanent, start_date = start_date,
-    stop_date = stop_date, values = values)
+    stop_date = stop_date, url = url, values = values)
 end
