@@ -20,6 +20,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+-(left::Date, right::Array{Date}) = Day[left - right_item for right_item in right]
+
+-(left::Array{Date}, right::Date) = Day[left_item - right for left_item in left]
+
+
 function assert_near(value::Array, target_value::Array; error_margin = 1)
   if error_margin <= 0
     @assert(all(target_value .== value), "$value differs from $target_value")

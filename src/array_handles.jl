@@ -38,6 +38,11 @@
 +(left::Array, array_handle::ArrayHandle) = left + get_array(array_handle)
 
 
+-(array_handle::ArrayHandle, right::Union(Date, Number, Array)) = get_array(array_handle) - right
+
+-(left::Union(Date, Number, Array), array_handle::ArrayHandle) = left - get_array(array_handle)
+
+
 .<(array_handle::ArrayHandle, right::Number) = get_array(array_handle) .< right
 
 .<(array_handle::ArrayHandle, right::Array) = get_array(array_handle) .< right

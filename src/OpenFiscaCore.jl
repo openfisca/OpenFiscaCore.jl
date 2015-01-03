@@ -28,7 +28,7 @@ export *, +, -, .<, @at, @calculate, @divide_year, @sum_months, AmountBracket, A
 
 using Dates
 
-import Base: *, +, .<, beginswith, convert, done, isfinite, length, next, real, start, zeros
+import Base: *, +, -, .<, beginswith, convert, done, isfinite, length, next, real, start, zeros
 
 
 abstract AbstractSimulation
