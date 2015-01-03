@@ -50,7 +50,14 @@ function at(variable::PeriodicVariable, period::DatePeriod, default)
   return array === nothing ? default : ConcreteDatedVariable(variable, period)
 end
 
+at(variable::PermanentVariable, period::DatePeriod, default) = at(variable, default)
+
 at(variable::PeriodicVariable, default) = at(variable, variable.simulation.period, default)
+
+function at(variable::PermanentVariable, default)
+  array = variable.array
+  return isempty(array) ? default : variable
+end
 
 function at(variable::PeriodicVariable, period::DatePeriod)
   dated_variable = at(variable, period, nothing)
@@ -62,10 +69,18 @@ end
 
 at(variable::PeriodicVariable) = at(variable, variable.simulation.period)
 
+function at(variable::PermanentVariable)
+  variable = at(variable, period, nothing)
+  if variable === nothing
+    throw(KeyError(period))
+  end
+  return variable
+end
 
-macro at(new_variable, period, default)
+
+macro at(new_variable, args...)
   global simulation, variable
-  return esc(:($new_variable = at(simulation, $(string(new_variable)), $period, $default)))
+  return esc(:($new_variable = at(simulation, $(string(new_variable)), $(args...))))
 end
 
 
@@ -96,9 +111,9 @@ function calculate(variable::PermanentVariable)
 end
 
 
-macro calculate(new_variable, period)
+macro calculate(new_variable, args...)
   global simulation, variable
-  return esc(:($new_variable = calculate(simulation, $(string(new_variable)), $period)))
+  return esc(:($new_variable = calculate(simulation, $(string(new_variable)), $(args...))))
 end
 
 
