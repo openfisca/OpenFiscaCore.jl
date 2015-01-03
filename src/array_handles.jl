@@ -47,6 +47,16 @@
 .<(left::Array, array_handle::ArrayHandle) = left .< get_array(array_handle)
 
 
+assert_near(left::Array, right::ArrayHandle; error_margin = 1) = assert_near(left, get_array(right),
+  error_margin = error_margin)
+
+assert_near(left::ArrayHandle, right::Array; error_margin = 1) = assert_near(get_array(left), right,
+  error_margin = error_margin)
+
+assert_near(left::ArrayHandle, right::ArrayHandle; error_margin = 1) = assert_near(get_array(left), get_array(right),
+  error_margin = error_margin)
+
+
 beginswith(array_handle::ArrayHandle, prefix) = beginswith(get_array(array_handle), prefix)
 
 

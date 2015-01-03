@@ -143,7 +143,7 @@ individu.step_size = 2
 set_array(simulation, "birth", [Date(1973, 1, 1), Date(1974, 1, 1)])
 set_array(simulation, "id_famille", [1, 1])
 set_array(simulation, "role_dans_famille", [PARENT1, PARENT2])
-@test_approx_eq(get_array(calculate(simulation, "age")), [Year(40), Year(39)])
+assert_near(calculate(simulation, "age"), [Year(40), Year(39)], error_margin = 0)
 
 simulation = Simulation(tax_benefit_system, YearPeriod(2013))
 famille = get_entity(simulation, "famille")
@@ -156,7 +156,7 @@ individu.step_size = 2
 set_array(simulation, "age_en_mois", [Month(40 * 12 + 11), Month(39 * 12)])
 set_array(simulation, "id_famille", [1, 1])
 set_array(simulation, "role_dans_famille", [PARENT1, PARENT2])
-@test_approx_eq(get_array(calculate(simulation, "age")), [Year(40), Year(39)])
+assert_near(calculate(simulation, "age"), [Year(40), Year(39)], error_margin = 0)
 
 
 function check_revenu_disponible(year, depcom, expected_revenu_disponible)
@@ -172,7 +172,7 @@ function check_revenu_disponible(year, depcom, expected_revenu_disponible)
   set_array(simulation, "id_famille", [1, 1, 2, 2, 3, 3])
   set_array(simulation, "role_dans_famille", [PARENT1, PARENT2, PARENT1, PARENT2, PARENT1, PARENT2])
   set_array(simulation, "salaire_brut", [0.0, 0.0, 50000.0, 0.0, 100000.0, 0.0])
-  @test_approx_eq(get_array(calculate(simulation, "revenu_disponible")), expected_revenu_disponible)
+  assert_near(calculate(simulation, "revenu_disponible"), expected_revenu_disponible)
 end
 
 

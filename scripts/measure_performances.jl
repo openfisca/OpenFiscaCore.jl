@@ -153,7 +153,7 @@ function check_revenu_disponible(year, depcom, expected_revenu_disponible)
   set_array(simulation, "id_famille", [1, 1, 2, 2, 3, 3])
   set_array(simulation, "role_dans_famille", [PARENT1, PARENT2, PARENT1, PARENT2, PARENT1, PARENT2])
   set_array(simulation, "salaire_brut", [0.0, 0.0, 50000.0, 0.0, 100000.0, 0.0])
-  @test_approx_eq(get_array(calculate(simulation, "revenu_disponible")), expected_revenu_disponible)
+  assert_near(calculate(simulation, "revenu_disponible"), expected_revenu_disponible)
 end
 
 

@@ -20,7 +20,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-# export Day, Month, Year
+function assert_near(value::Array, target_value::Array; error_margin = 1)
+  if error_margin <= 0
+    @assert(all(target_value .== value), "$value differs from $target_value")
+  else
+    @assert(all(target_value - error_margin .< value) && all(value .< target_value + error_margin),
+      "$value differs from $target_value with a margin $(abs(value - target_value)) >= $error_margin")
+  end
+end
 
 
 beginswith(array::Array, prefix) = Bool[beginswith(cell, prefix) for cell in array]
