@@ -20,36 +20,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-*(array_handle::ArrayHandle, right::Number) = get_array(array_handle) * right
+*(left::ArrayHandle, right::Union(Number, Array)) = get_array(left) * right
 
-*(array_handle::ArrayHandle, right::Array) = get_array(array_handle) * right
-
-*(left::Number, array_handle::ArrayHandle) = left * get_array(array_handle)
-
-*(left::Array, array_handle::ArrayHandle) = left * get_array(array_handle)
+*(left::Union(Number, Array), right::ArrayHandle) = left * get_array(right)
 
 
-+(array_handle::ArrayHandle, right::Number) = get_array(array_handle) + right
++(left::ArrayHandle, right::Union(Number, Array)) = get_array(left) + right
 
-+(array_handle::ArrayHandle, right::Array) = get_array(array_handle) + right
-
-+(left::Number, array_handle::ArrayHandle) = left + get_array(array_handle)
-
-+(left::Array, array_handle::ArrayHandle) = left + get_array(array_handle)
++(left::Union(Number, Array), right::ArrayHandle) = left + get_array(right)
 
 
--(array_handle::ArrayHandle, right::Union(Date, Number, Array)) = get_array(array_handle) - right
+-(left::ArrayHandle, right::Union(Date, Number, Array)) = get_array(left) - right
 
--(left::Union(Date, Number, Array), array_handle::ArrayHandle) = left - get_array(array_handle)
+-(left::Union(Date, Number, Array), right::ArrayHandle) = left - get_array(right)
 
 
-.<(array_handle::ArrayHandle, right::Number) = get_array(array_handle) .< right
+.<(left::ArrayHandle, right::Union(Number, Array)) = get_array(left) .< right
 
-.<(array_handle::ArrayHandle, right::Array) = get_array(array_handle) .< right
-
-.<(left::Number, array_handle::ArrayHandle) = left .< get_array(array_handle)
-
-.<(left::Array, array_handle::ArrayHandle) = left .< get_array(array_handle)
+.<(left::Union(Number, Array), right::ArrayHandle) = left .< get_array(right)
 
 
 assert_near(left::Array, right::ArrayHandle; error_margin = 1) = assert_near(left, get_array(right),
