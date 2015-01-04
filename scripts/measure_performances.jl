@@ -30,7 +30,7 @@ using Dates
 using OpenFiscaCore
 
 
-famille = EntityDefinition("famille", index_variable_name = "id_famille", role_variable_name ="role_famille")
+famille = EntityDefinition("famille", index_variable_name = "id_famille", role_variable_name ="role_dans_famille")
 individu = EntityDefinition("individu", is_person = true)
 
 PARENT1 = Role(1)
@@ -46,7 +46,7 @@ depcom = VariableDefinition("depcom", famille, String,
   label = """Code INSEE "depcom" de la commune de résidence de la famille""")
 id_famille = VariableDefinition("id_famille", individu, Unsigned, label = "Identifiant de la famille",
   permanent = true)
-role_famille = VariableDefinition("role_dans_famille", individu, Role, label = "Rôle dans la famille",
+role_dans_famille = VariableDefinition("role_dans_famille", individu, Role, label = "Rôle dans la famille",
   permanent = true)
 salaire_brut = VariableDefinition("salaire_brut", individu, Float32, label = "Salaire brut")
 
@@ -132,7 +132,7 @@ tax_benefit_system = TaxBenefitSystem(
     id_famille,
     revenu_disponible,
     rsa,
-    role_famille,
+    role_dans_famille,
     salaire_brut,
     salaire_imposable,
     salaire_net,

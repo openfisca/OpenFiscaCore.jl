@@ -27,5 +27,5 @@ using Dates
 using OpenFiscaCore
 
 
-include("periods_tests.jl")
-include("tax_benefit_systems_tests.jl")
+include("test_periods.jl")
+include("test_tax_benefit_systems.jl")

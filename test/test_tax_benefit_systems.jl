@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-famille = EntityDefinition("famille", index_variable_name = "id_famille", role_variable_name ="role_famille")
+famille = EntityDefinition("famille", index_variable_name = "id_famille", role_variable_name ="role_dans_famille")
 individu = EntityDefinition("individu", is_person = true)
 
 PARENT1 = Role(1)
@@ -36,7 +36,7 @@ depcom = VariableDefinition("depcom", famille, String,
   label = """Code INSEE "depcom" de la commune de résidence de la famille""")
 id_famille = VariableDefinition("id_famille", individu, Unsigned, label = "Identifiant de la famille",
   permanent = true)
-role_famille = VariableDefinition("role_dans_famille", individu, Role, label = "Rôle dans la famille",
+role_dans_famille = VariableDefinition("role_dans_famille", individu, Role, label = "Rôle dans la famille",
   permanent = true)
 salaire_brut = VariableDefinition("salaire_brut", individu, Float32, label = "Salaire brut")
 
@@ -122,7 +122,7 @@ tax_benefit_system = TaxBenefitSystem(
     id_famille,
     revenu_disponible,
     rsa,
-    role_famille,
+    role_dans_famille,
     salaire_brut,
     salaire_imposable,
     salaire_net,
@@ -145,6 +145,15 @@ set_array(simulation, "id_famille", [1, 1])
 set_array(simulation, "role_dans_famille", [PARENT1, PARENT2])
 assert_near(calculate(simulation, "age"), [Year(40), Year(39)], error_margin = 0)
 
+# Redo the previous simulation using the add_member helper function.
+simulation = Simulation(tax_benefit_system, YearPeriod(2013))
+famille = get_entity(simulation, "famille")
+individu = get_entity(simulation, "individu")
+add_member(famille)
+add_member(individu, birth = Date(1973, 1, 1), role_dans_famille = PARENT1)
+add_member(individu, birth = Date(1974, 1, 1), role_dans_famille = PARENT2)
+assert_near(calculate(simulation, "age"), [Year(40), Year(39)], error_margin = 0)
+
 simulation = Simulation(tax_benefit_system, YearPeriod(2013))
 famille = get_entity(simulation, "famille")
 famille.count = 1
@@ -156,6 +165,15 @@ individu.step_size = 2
 set_array(simulation, "age_en_mois", [Month(40 * 12 + 11), Month(39 * 12)])
 set_array(simulation, "id_famille", [1, 1])
 set_array(simulation, "role_dans_famille", [PARENT1, PARENT2])
+assert_near(calculate(simulation, "age"), [Year(40), Year(39)], error_margin = 0)
+
+# Redo the previous simulation using the add_member helper function.
+simulation = Simulation(tax_benefit_system, YearPeriod(2013))
+famille = get_entity(simulation, "famille")
+individu = get_entity(simulation, "individu")
+add_member(famille)
+add_member(individu, age_en_mois = Month(40 * 12 + 11), role_dans_famille = PARENT1)
+add_member(individu, age_en_mois = Month(39 * 12), role_dans_famille = PARENT2)
 assert_near(calculate(simulation, "age"), [Year(40), Year(39)], error_margin = 0)
 
 
@@ -172,6 +190,18 @@ function check_revenu_disponible(year, depcom, expected_revenu_disponible)
   set_array(simulation, "id_famille", [1, 1, 2, 2, 3, 3])
   set_array(simulation, "role_dans_famille", [PARENT1, PARENT2, PARENT1, PARENT2, PARENT1, PARENT2])
   set_array(simulation, "salaire_brut", [0.0, 0.0, 50000.0, 0.0, 100000.0, 0.0])
+  assert_near(calculate(simulation, "revenu_disponible"), expected_revenu_disponible)
+
+  # Redo the previous simulation using the add_member helper function.
+  simulation = Simulation(tax_benefit_system, YearPeriod(year))
+  famille = get_entity(simulation, "famille")
+  individu = get_entity(simulation, "individu")
+  salaire_brut = [0.0, 0.0, 50000.0, 0.0, 100000.0, 0.0]
+  for famille_index in 1:3
+    add_member(famille, depcom = depcom)
+    add_member(individu, role_dans_famille = PARENT1, salaire_brut = salaire_brut[(famille_index - 1) * 2 + 1])
+    add_member(individu, role_dans_famille = PARENT2, salaire_brut = salaire_brut[(famille_index - 1) * 2 + 2])
+  end
   assert_near(calculate(simulation, "revenu_disponible"), expected_revenu_disponible)
 end
 

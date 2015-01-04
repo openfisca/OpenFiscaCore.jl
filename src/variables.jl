@@ -209,6 +209,8 @@ end
 get_array!(func::Function, variable::PeriodicVariable, period::DatePeriod) = get!(func, variable.array_by_period,
   period)
 
+get_array!(func::Function, variable::PermanentVariable, period::DatePeriod) = get_array!(func, variable)
+
 function get_array!(func::Function, variable::PermanentVariable)
   array = variable.array
   if !isempty(array)
