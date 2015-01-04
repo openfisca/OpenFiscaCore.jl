@@ -78,9 +78,9 @@ function at(variable::PermanentVariable)
 end
 
 
-macro at(new_variable, args...)
-  global simulation, variable
-  return esc(:($new_variable = at(simulation, $(string(new_variable)), $(args...))))
+macro at(variable, args...)
+  global simulation
+  return esc(:($variable = at(simulation, $(string(variable)), $(args...))))
 end
 
 
@@ -111,9 +111,9 @@ function calculate(variable::PermanentVariable)
 end
 
 
-macro calculate(new_variable, args...)
-  global simulation, variable
-  return esc(:($new_variable = calculate(simulation, $(string(new_variable)), $(args...))))
+macro calculate(variable, args...)
+  global simulation
+  return esc(:($variable = calculate(simulation, $(string(variable)), $(args...))))
 end
 
 
@@ -133,9 +133,9 @@ function divide_year(variable::PeriodicVariable, period::MonthPeriod)
 end
 
 
-macro divide_year(new_variable, period)
-  global simulation, variable
-  return esc(:($new_variable = divide_year(simulation, $(string(new_variable)), $period)))
+macro divide_year(variable, period)
+  global simulation
+  return esc(:($variable = divide_year(simulation, $(string(variable)), $period)))
 end
 
 
@@ -272,9 +272,9 @@ function sum_months(variable::PeriodicVariable, period::YearPeriod)
 end
 
 
-macro sum_months(new_variable, period)
-  global simulation, variable
-  return esc(:($new_variable = sum_months(simulation, $(string(new_variable)), $period)))
+macro sum_months(variable, period)
+  global simulation
+  return esc(:($variable = sum_months(simulation, $(string(variable)), $period)))
 end
 
 
