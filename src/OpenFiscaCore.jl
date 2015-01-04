@@ -23,12 +23,12 @@
 module OpenFiscaCore
 
 
-export *, +, -, .<, @at, @calculate, @divide_year, @sum_months, add_member, AmountBracket, AmountScale, apply_tax_scale, ArrayHandle, assert_near, at, beginswith, calculate, convert, DatedAmountScale, DatedLinearAverageRateScale, DatedMarginalRateScale, DatedOrPermanentVariable, DatedRateScale, DatedTaxScale, DatedVariable, DatePeriod, DateRangeValue, DayPeriod, days, default_array, divide_year, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, get_array, get_entity, get_variable!, intersection, isfinite, length, LinearAverageRateScale, MarginalRateScale, MonthPeriod, next, Parameter, PeriodicVariable, PermanentVariable, RateBracket, RateScale, real, Role, set_array, Simulation, start, stop_date, sum_months, TaxBenefitSystem, TaxScale, unit_type, UnitIntervalFloat32, VariableDefinition, YearPeriod, zeros
+export *, +, -, .<, @at, @calculate, @divide_year, @sum_months, add_member, AmountBracket, AmountScale, apply_tax_scale, ArrayHandle, assert_near, at, beginswith, calculate, convert, DatedAmountScale, DatedLinearAverageRateScale, DatedMarginalRateScale, DatedOrPermanentVariable, DatedRateScale, DatedTaxScale, DatedVariable, DatePeriod, DateRangeValue, DayPeriod, days, default_array, div, divide_year, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, get_array, get_entity, get_variable!, intersection, isfinite, length, LinearAverageRateScale, MarginalRateScale, MonthPeriod, next, Parameter, PeriodicVariable, PermanentVariable, RateBracket, RateScale, real, Role, set_array, Simulation, start, stop_date, sum_months, TaxBenefitSystem, TaxScale, unit_type, UnitIntervalFloat32, VariableDefinition, YearPeriod, zeros
 
 
 using Dates
 
-import Base: *, +, -, .<, beginswith, convert, done, isfinite, length, next, real, start, zeros
+import Base: *, +, -, .<, beginswith, convert, div, done, isfinite, length, next, real, start, zeros
 
 
 abstract AbstractSimulation

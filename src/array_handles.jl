@@ -53,6 +53,11 @@ assert_near(left::ArrayHandle, right::ArrayHandle; error_margin = 1) = assert_ne
 beginswith(array_handle::ArrayHandle, prefix) = beginswith(get_array(array_handle), prefix)
 
 
+div(left::ArrayHandle, right::Union(Number, Array)) = div(get_array(left), right)
+
+div(left::Union(Number, Array), right::ArrayHandle) = div(left, get_array(right))
+
+
 done(array_handle::ArrayHandle, state) = done(get_array(array_handle), state)
 
 
