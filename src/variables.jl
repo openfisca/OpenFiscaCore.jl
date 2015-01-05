@@ -278,14 +278,14 @@ get_variable(variable::PermanentVariable) = variable
 
 
 function set_array(variable::PeriodicVariable, period::DatePeriod, array::Array)
-  @assert length(array) == get_entity(variable).count
+  @assert(length(array) == get_entity(variable).count)
   variable.array_by_period[period] = array
   return ConcreteDatedVariable(variable, period)
 end
 
 function set_array(variable::PeriodicVariable, dated_variable::DatedVariable)
   array = get_array(dated_variable)
-  @assert length(array) == get_entity(variable).count
+  @assert(length(array) == get_entity(variable).count)
   variable.array_by_period[dated_variable.period] = array
   return dated_variable
 end
@@ -293,7 +293,7 @@ end
 set_array(variable::PeriodicVariable, array::Array) = set_array(variable, variable.simulation.period, array)
 
 function set_array(variable::PermanentVariable, array::Array)
-  @assert length(array) == get_entity(variable).count
+  @assert(length(array) == get_entity(variable).count)
   variable.array = array
   return variable
 end
