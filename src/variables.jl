@@ -72,8 +72,8 @@ function any_person_in_entity(array_handle::VariableAtDateOrPermanent, entity::E
   return ConcreteEntityArray(entity, entity_array)
 end
 
-any_person_in_entity(array_handle::VariableAtDateOrPermanent, entity::Entity, period::DatePeriod) \
-  = any_person_in_entity(array_handle, entity, period, ALL_ROLES)
+any_person_in_entity(array_handle::VariableAtDateOrPermanent, entity::Entity, period::DatePeriod
+) = any_person_in_entity(array_handle, entity, period, ALL_ROLES)
 
 any_person_in_entity(array_handle::VariableAtDate, entity::Entity, roles::Array{Role}) = any_person_in_entity(
   array_handle, entity, array_handle.period, roles)
