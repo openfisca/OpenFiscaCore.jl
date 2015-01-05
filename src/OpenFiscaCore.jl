@@ -23,7 +23,7 @@
 module OpenFiscaCore
 
 
-export *, +, -, .<, @at, @calculate, @divide_year, @sum_months, add_member, AmountBracket, AmountScale, apply_tax_scale, ArrayHandle, assert_near, at, beginswith, calculate, convert, DatedAmountScale, DatedLinearAverageRateScale, DatedMarginalRateScale, DatedOrPermanentVariable, DatedRateScale, DatedTaxScale, DatedVariable, DatePeriod, DateRangeValue, DayPeriod, days, default_array, div, divide_year, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, get_array, get_entity, get_variable!, intersection, isfinite, isless, length, LinearAverageRateScale, MarginalRateScale, MonthPeriod, next, Parameter, PeriodicVariable, PermanentVariable, RateBracket, RateScale, real, Role, set_array, Simulation, start, stop_date, sum_months, TaxBenefitSystem, TaxScale, unit_type, UnitIntervalFloat32, VariableDefinition, YearPeriod, zeros
+export *, +, -, .<, @at, @calculate, @divide_year, @sum_months, add_member, AmountBracket, AmountScale, apply_tax_scale, ArrayHandle, assert_near, at, beginswith, calculate, convert, DatedAmountScale, DatedLinearAverageRateScale, DatedMarginalRateScale, DatedRateScale, DatedTaxScale, DatePeriod, DateRangeValue, DayPeriod, days, default_array, div, divide_year, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, get_array, get_entity, get_variable!, intersection, isfinite, isless, length, LinearAverageRateScale, MarginalRateScale, MonthPeriod, next, Parameter, PeriodicVariable, PermanentVariable, RateBracket, RateScale, real, Role, set_array, Simulation, start, stop_date, sum_months, TaxBenefitSystem, TaxScale, unit_type, UnitIntervalFloat32, VariableAtDate, VariableAtDateOrPermanent, VariableDefinition, YearPeriod, zeros
 
 
 using Dates
@@ -32,15 +32,15 @@ import Base: *, +, -, .<, beginswith, convert, div, done, isfinite, isless, leng
 
 
 abstract AbstractSimulation
-abstract DatedVariable
 abstract EntityArray
 abstract Variable
+abstract VariableAtDate
 
 abstract PeriodicVariable <: Variable
 abstract PermanentVariable <: Variable
 
-typealias DatedOrPermanentVariable Union(DatedVariable, PermanentVariable)
-typealias ArrayHandle Union(DatedVariable, EntityArray, PermanentVariable)
+typealias ArrayHandle Union(EntityArray, PermanentVariable, VariableAtDate)
+typealias VariableAtDateOrPermanent Union(PermanentVariable, VariableAtDate)
 
 
 include("entities.jl")

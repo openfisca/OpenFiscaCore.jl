@@ -80,7 +80,7 @@ end
 set_array(simulation::Simulation, variable_name, period::DatePeriod, array::Array) = set_array(
   get_variable!(simulation, variable_name), period, array)
 
-set_array(simulation::Simulation, variable_name, array_handle::DatedOrPermanentVariable) = set_array(
+set_array(simulation::Simulation, variable_name, array_handle::VariableAtDateOrPermanent) = set_array(
   get_variable!(simulation, variable_name), array_handle)
 
 set_array(simulation::Simulation, variable_name, array::Array) = set_array(
