@@ -64,6 +64,11 @@ done(array_handle::ArrayHandle, state) = done(get_array(array_handle), state)
 get_array(array::Array) = array
 
 
+isless(left::ArrayHandle, right::Union(Date, Number, Array)) = isless(get_array(left), right)
+
+isless(left::Union(Date, Number, Array), right::ArrayHandle) = isless(left, get_array(right))
+
+
 length(array_handle::ArrayHandle) = length(get_array(array_handle))
 
 
