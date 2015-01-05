@@ -45,6 +45,42 @@ end
 ConcretePermanentVariable(simulation, definition) = ConcretePermanentVariable(simulation, definition, [])
 
 
+function any_person_in_entity(array_handle::DatedOrPermanentVariable, entity::Entity, period::DatePeriod,
+    roles::Array{Role})
+  @assert(is_person(get_entity(array_handle)))
+  @assert(!is_person(entity))
+  entity_array = zeros(Bool, entity.count)
+  if roles == ALL_ROLES
+    for (index_cell, value_cell) in zip(
+          get_array(get_index_variable(entity)),
+          get_array(array_handle),
+        )
+      entity_array[index_cell] += value_cell
+    end
+  else
+    for (index_cell, role_cell, value_cell) in zip(
+          get_array(get_index_variable(entity)),
+          get_array(get_role_variable(entity), period),
+          get_array(array_handle),
+        )
+      if role_cell in roles
+        entity_array[index_cell] += value_cell
+      end
+    end
+  end
+  return ConcreteEntityArray(entity, entity_array)
+end
+
+any_person_in_entity(array_handle::DatedOrPermanentVariable, entity::Entity, period::DatePeriod) = any_person_in_entity(
+  array_handle, entity, period, ALL_ROLES)
+
+any_person_in_entity(array_handle::DatedVariable, entity::Entity, roles::Array{Role}) = any_person_in_entity(
+  array_handle, entity, array_handle.period, roles)
+
+any_person_in_entity(array_handle::DatedVariable, entity::Entity) = any_person_in_entity(array_handle, entity,
+  array_handle.period, ALL_ROLES)
+
+
 function at(variable::PeriodicVariable, period::DatePeriod, default)
   array = get_array(variable, period, nothing)
   return array === nothing ? default : ConcreteDatedVariable(variable, period)
@@ -139,13 +175,13 @@ macro divide_year(variable, period)
 end
 
 
-entity_to_person(array_handle::DatedOrPermanentVariable, role::Role) = entity_to_person(array_handle, Role[role])
+entity_to_person(array_handle::DatedOrPermanentVariable, period::DatePeriod, role::Role) = entity_to_person(
+  array_handle, period, Role[role])
 
-function entity_to_person(array_handle::DatedOrPermanentVariable, roles::Array{Role})
+function entity_to_person(array_handle::DatedOrPermanentVariable, period::DatePeriod, roles::Array{Role})
   array = get_array(array_handle)
-  period = array_handle.period
   entity = get_entity(array_handle)
-  @assert !is_person(entity)
+  @assert(!is_person(entity))
   simulation = entity.simulation
   person = get_person(simulation)
   variable_definition = get_variable(array_handle).definition
@@ -167,7 +203,16 @@ function entity_to_person(array_handle::DatedOrPermanentVariable, roles::Array{R
   return ConcreteEntityArray(entity, person_array)
 end
 
-entity_to_person(array_handle::DatedOrPermanentVariable) = entity_to_person(array_handle, ALL_ROLES)
+entity_to_person(array_handle::DatedOrPermanentVariable, period::DatePeriod) = entity_to_person(array_handle, period,
+  ALL_ROLES)
+
+entity_to_person(array_handle::DatedVariable, role::Role) = entity_to_person(array_handle, array_handle.period,
+  Role[role])
+
+entity_to_person(array_handle::DatedVariable, roles::Array{Role}) = entity_to_person(array_handle, array_handle.period,
+  roles)
+
+entity_to_person(array_handle::DatedVariable) = entity_to_person(array_handle, array_handle.period, ALL_ROLES)
 
 
 get_array(dated_variable::DatedVariable, default) = get_array(dated_variable.variable, dated_variable.period, default)
@@ -254,6 +299,26 @@ function set_array(variable::PermanentVariable, array::Array)
 end
 
 
+function single_person_in_entity(array_handle::DatedOrPermanentVariable, entity::Entity, period::DatePeriod, role::Role)
+  @assert(is_person(get_entity(array_handle)))
+  @assert(!is_person(entity))
+  entity_array = Array(get_variable(array_handle).definition.cell_type, entity.count)
+  for (index_cell, role_cell, value_cell) in zip(
+        get_array(get_index_variable(entity)),
+        get_array(get_role_variable(entity), period),
+        get_array(array_handle),
+      )
+    if role_cell === role
+      entity_array[index_cell] = value_cell
+    end
+  end
+  return ConcreteEntityArray(entity, entity_array)
+end
+
+single_person_in_entity(array_handle::DatedVariable, entity::Entity, role::Role) = single_person_in_entity(
+  array_handle, entity, array_handle.period, role)
+
+
 function sum_months(variable::PeriodicVariable, period::YearPeriod)
   array = zeros(variable)
   start_year, start_month, start_day = yearmonthday(period.start)
@@ -276,6 +341,43 @@ macro sum_months(variable, period)
   global simulation
   return esc(:($variable = sum_months(simulation, $(string(variable)), $period)))
 end
+
+
+function sum_person_in_entity(array_handle::DatedOrPermanentVariable, entity::Entity, period::DatePeriod,
+    roles::Array{Role})
+  @assert(is_person(get_entity(array_handle)))
+  @assert(!is_person(entity))
+  cell_type = get_variable(array_handle).definition.cell_type
+  entity_array = zeros(cell_type === Bool ? Int16 : cell_type, entity.count)
+  if roles == ALL_ROLES
+    for (index_cell, value_cell) in zip(
+          get_array(get_index_variable(entity)),
+          get_array(array_handle),
+        )
+      entity_array[index_cell] += value_cell
+    end
+  else
+    for (index_cell, role_cell, value_cell) in zip(
+          get_array(get_index_variable(entity)),
+          get_array(get_role_variable(entity), period),
+          get_array(array_handle),
+        )
+      if role_cell in roles
+        entity_array[index_cell] += value_cell
+      end
+    end
+  end
+  return ConcreteEntityArray(entity, entity_array)
+end
+
+sum_person_in_entity(array_handle::DatedOrPermanentVariable, entity::Entity, period::DatePeriod) = sum_person_in_entity(
+  array_handle, entity, period, ALL_ROLES)
+
+sum_person_in_entity(array_handle::DatedVariable, entity::Entity, roles::Array{Role}) = sum_person_in_entity(
+  array_handle, entity, array_handle.period, roles)
+
+sum_person_in_entity(array_handle::DatedVariable, entity::Entity) = sum_person_in_entity(array_handle, entity,
+  array_handle.period, ALL_ROLES)
 
 
 zeros(variable::Variable) = zeros(variable.definition.cell_type, get_entity(variable).count)
