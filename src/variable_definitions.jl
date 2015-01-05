@@ -59,7 +59,9 @@ end
 function VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type; cell_default = nothing,
     cell_format = nothing, cerfa_field = nothing, label = name, permanent = false, start_date = nothing,
     stop_date = nothing, url = nothing, values = nothing)
-  formula = permanent ? variable -> default_array(variable) : (variable, period) -> (period, default_array(variable))
+  formula = (permanent
+    ? (simulation, variable) -> default_array(variable)
+    : (simulation, variable, period) -> (period, default_array(variable)))
   return VariableDefinition(formula, name, entity_definition, cell_type, cell_default = cell_default,
     cell_format = cell_format, cerfa_field = cerfa_field, label = label, permanent = permanent, start_date = start_date,
     stop_date = stop_date, url = url, values = values)
