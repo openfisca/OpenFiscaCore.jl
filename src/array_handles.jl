@@ -20,24 +20,56 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-*(left::ArrayHandle, right::Union(Number, Array)) = get_array(left) * right
+*(left::ArrayHandle, right::ArrayHandle) = get_array(left) * get_array(right)
 
-*(left::Union(Number, Array), right::ArrayHandle) = left * get_array(right)
+*(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) * right
 
-
-+(left::ArrayHandle, right::Union(Number, Array)) = get_array(left) + right
-
-+(left::Union(Number, Array), right::ArrayHandle) = left + get_array(right)
+*(left::Union(Array, Number), right::ArrayHandle) = left * get_array(right)
 
 
--(left::ArrayHandle, right::Union(Date, Number, Array)) = get_array(left) - right
++(left::ArrayHandle, right::ArrayHandle) = get_array(left) + get_array(right)
 
--(left::Union(Date, Number, Array), right::ArrayHandle) = left - get_array(right)
++(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) + right
+
++(left::Union(Array, Number), right::ArrayHandle) = left + get_array(right)
 
 
-.<(left::ArrayHandle, right::Union(Number, Array)) = get_array(left) .< right
+-(left::ArrayHandle, right::ArrayHandle) = get_array(left) - get_array(right)
 
-.<(left::Union(Number, Array), right::ArrayHandle) = left .< get_array(right)
+-(left::ArrayHandle, right::Union(Array, Date, Number)) = get_array(left) - right
+
+-(left::Union(Array, Date, Number), right::ArrayHandle) = left - get_array(right)
+
+
+.<(left::ArrayHandle, right::ArrayHandle) = get_array(left) .< get_array(right)
+
+.<(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) .< right
+
+.<(left::Union(Array, Number), right::ArrayHandle) = left .< get_array(right)
+
+
+.<=(left::ArrayHandle, right::ArrayHandle) = get_array(left) .<= get_array(right)
+
+.<=(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) .<= right
+
+.<=(left::Union(Array, Number), right::ArrayHandle) = left .<= get_array(right)
+
+
+(&)(left::ArrayHandle, right::ArrayHandle) = get_array(left) & get_array(right)
+
+(&)(left::ArrayHandle, right::Union(Array, Number, BitArray)) = get_array(left) & right
+
+(&)(left::Union(Array, Number, BitArray), right::ArrayHandle) = left & get_array(right)
+
+
+|(left::ArrayHandle, right::ArrayHandle) = get_array(left) | get_array(right)
+
+|(left::ArrayHandle, right::Union(Array, Number, BitArray)) = get_array(left) | right
+
+|(left::Union(Array, Number, BitArray), right::ArrayHandle) = left | get_array(right)
+
+
+!(array_handle::ArrayHandle) = !get_array(array_handle)
 
 
 assert_near(left::Array, right::ArrayHandle; error_margin = 1) = assert_near(left, get_array(right),
@@ -53,20 +85,21 @@ assert_near(left::ArrayHandle, right::ArrayHandle; error_margin = 1) = assert_ne
 beginswith(array_handle::ArrayHandle, prefix) = beginswith(get_array(array_handle), prefix)
 
 
-div(left::ArrayHandle, right::Union(Number, Array)) = div(get_array(left), right)
+div(left::ArrayHandle, right::ArrayHandle) = div(get_array(left), get_array(right))
 
-div(left::Union(Number, Array), right::ArrayHandle) = div(left, get_array(right))
+div(left::ArrayHandle, right::Union(Array, Number)) = div(get_array(left), right)
+
+div(left::Union(Array, Number), right::ArrayHandle) = div(left, get_array(right))
 
 
 done(array_handle::ArrayHandle, state) = done(get_array(array_handle), state)
 
 
-get_array(array::Array) = array
+isless(left::ArrayHandle, right::ArrayHandle) = isless(get_array(left), get_array(right))
 
+isless(left::ArrayHandle, right::Union(Array, Date, Number)) = isless(get_array(left), right)
 
-isless(left::ArrayHandle, right::Union(Date, Number, Array)) = isless(get_array(left), right)
-
-isless(left::Union(Date, Number, Array), right::ArrayHandle) = isless(left, get_array(right))
+isless(left::Union(Array, Date, Number), right::ArrayHandle) = isless(left, get_array(right))
 
 
 length(array_handle::ArrayHandle) = length(get_array(array_handle))

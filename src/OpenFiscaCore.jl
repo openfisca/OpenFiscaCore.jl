@@ -23,12 +23,12 @@
 module OpenFiscaCore
 
 
-export *, +, -, .<, @at, @calculate, @divide_year, @sum_months, add_member, AmountBracket, AmountScale, apply_tax_scale, ArrayHandle, assert_near, at, beginswith, calculate, convert, DatedAmountScale, DatedLinearAverageRateScale, DatedMarginalRateScale, DatedRateScale, DatedTaxScale, DatePeriod, DateRangeValue, DayPeriod, days, default_array, div, divide_year, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, get_array, get_entity, get_variable!, intersection, isfinite, isless, length, LinearAverageRateScale, MarginalRateScale, MonthPeriod, next, Parameter, PeriodicVariable, PermanentVariable, RateBracket, RateScale, real, Role, set_array, Simulation, start, stop_date, sum_months, TaxBenefitSystem, TaxScale, unit_type, UnitIntervalFloat32, VariableAtDate, VariableAtDateOrPermanent, VariableDefinition, YearPeriod, zeros
+export *, +, -, .<, .<=, &, |, !, @at, @calculate, @divide_year, @sum_months, add_member, AmountBracket, AmountScale, any_person_in_entity, apply_tax_scale, ArrayHandle, assert_near, at, beginswith, calculate, convert, DatedAmountScale, DatedLinearAverageRateScale, DatedMarginalRateScale, DatedRateScale, DatedTaxScale, DatePeriod, DateRangeValue, DayPeriod, days, default_array, div, divide_year, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, get_array, get_entity, get_variable!, intersection, isfinite, isless, length, LinearAverageRateScale, MarginalRateScale, MonthPeriod, next, Parameter, PeriodicVariable, PermanentVariable, RateBracket, RateScale, real, Role, set_array, Simulation, single_person_in_entity, start, stop_date, sum_months, sum_person_in_entity, TaxBenefitSystem, TaxScale, unit_type, UnitIntervalFloat32, VariableAtDate, VariableAtDateOrPermanent, VariableDefinition, YearPeriod, zeros
 
 
 using Dates
 
-import Base: *, +, -, .<, beginswith, convert, div, done, isfinite, isless, length, next, real, start, zeros
+import Base: *, +, -, .<, .<=, &, |, !, beginswith, convert, div, done, isfinite, isless, length, next, real, start, zeros
 
 
 abstract AbstractSimulation

@@ -23,18 +23,18 @@
 type ConcretePeriodicVariable <: PeriodicVariable
   simulation::AbstractSimulation
   definition::VariableDefinition
-  array_by_period::Dict{DatePeriod, Array}
+  array_by_period::Dict{DatePeriod, Union(Array, BitArray)}
 end
 
 ConcretePeriodicVariable(simulation, definition) = ConcretePeriodicVariable(simulation, definition,
-  Dict{DatePeriod, Array}())
+  Dict{DatePeriod, Union(Array, BitArray)}())
 
 
 type ConcretePermanentVariable <: PermanentVariable
   # A permanent variable is a variable whose value doesn't depend from date (example: ID, birth)
   simulation::Simulation
   definition::VariableDefinition
-  array::Array
+  array::Union(Array, BitArray)
 end
 
 ConcretePermanentVariable(simulation, definition) = ConcretePermanentVariable(simulation, definition, [])
@@ -279,7 +279,7 @@ get_variable(variable_at_date::VariableAtDate) = variable_at_date.variable
 get_variable(variable::PermanentVariable) = variable
 
 
-function set_array(variable::PeriodicVariable, period::DatePeriod, array::Array)
+function set_array(variable::PeriodicVariable, period::DatePeriod, array::Union(Array, BitArray))
   @assert(length(array) == get_entity(variable).count)
   variable.array_by_period[period] = array
   return ConcreteVariableAtDate(variable, period)
@@ -292,9 +292,10 @@ function set_array(variable::PeriodicVariable, variable_at_date::VariableAtDate)
   return variable_at_date
 end
 
-set_array(variable::PeriodicVariable, array::Array) = set_array(variable, variable.simulation.period, array)
+set_array(variable::PeriodicVariable, array::Union(Array, BitArray)) = set_array(variable, variable.simulation.period,
+  array)
 
-function set_array(variable::PermanentVariable, array::Array)
+function set_array(variable::PermanentVariable, array::Union(Array, BitArray))
   @assert(length(array) == get_entity(variable).count)
   variable.array = array
   return variable

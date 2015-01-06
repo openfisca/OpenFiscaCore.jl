@@ -54,3 +54,6 @@ convert(::Type{Array{Year}}, array::Array{Date}) = Year[
   Year(date)
   for date in array
 ]
+
+
+get_array(array::Union(Array, BitArray)) = array
