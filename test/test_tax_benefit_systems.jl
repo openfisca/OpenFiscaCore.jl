@@ -45,7 +45,7 @@ salaire_brut = VariableDefinition("salaire_brut", individu, Float32, label = "Sa
 
 
 age = VariableDefinition("age", individu, Year, label = "Âge (en nombre d'années)") do simulation, variable, period
-  @at(age_en_mois, period, nothing)
+  @variable_at(age_en_mois, period, nothing)
   return period, (age_en_mois === nothing
     ? Year[Year(period.start) - Year(birth_cell) for birth_cell in @calculate(birth, period)]
     : Year[Year(int(div(cell, 12))) for cell in age_en_mois])
@@ -112,6 +112,7 @@ end
 
 tax_benefit_system = TaxBenefitSystem(
   [famille, individu],
+  Dict{String, Union(Parameter, TaxScale)}(),
   [
     age,
     age_en_mois,

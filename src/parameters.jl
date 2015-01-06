@@ -60,7 +60,12 @@ immutable Parameter{T}
 end
 
 
-function at(date_range_values::Array{DateRangeValue}, date::Date; check_start_date = nothing, check_stop_date = nothing)
+parameter_at(parameter::Parameter, date::Date) = value_at(parameter.value, date,
+  check_start_date = parameter.check_start_date, check_stop_date = parameter.check_stop_date)
+
+
+function value_at(date_range_values::Array{DateRangeValue}, date::Date; check_start_date = nothing,
+    check_stop_date = nothing)
   max_stop_date = nothing
   max_value = nothing
   min_start_date = nothing
@@ -93,6 +98,3 @@ function at(date_range_values::Array{DateRangeValue}, date::Date; check_start_da
   end
   return nothing
 end
-
-at(parameter::Parameter, date::Date) = at(parameter.value, date, check_start_date = parameter.check_start_date,
-  check_stop_date = parameter.check_stop_date)

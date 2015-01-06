@@ -22,24 +22,31 @@
 
 type TaxBenefitSystem
   entity_definition_by_name::Dict{String, EntityDefinition}
+  parameter_by_date_by_name::Dict{String, Dict{Date, Any}}  # Cache of parameter_at_date items
+  parameter_by_name::Dict{String, Union(Parameter, TaxScale)}
   person_name::String  # Name of person entity
   variable_definition_by_name::Dict{String, VariableDefinition}
 
   TaxBenefitSystem(entity_definition_by_name::Dict{String, EntityDefinition},
+    parameter_by_name::Dict{String, Union(Parameter, TaxScale)},
     variable_definition_by_name::Dict{String, VariableDefinition}
   ) = new(
     entity_definition_by_name,
+    Dict{String, Dict{Date, Any}}(),
+    parameter_by_name,
     get_person_name(entity_definition_by_name),
     variable_definition_by_name,
   )
 end
 
-TaxBenefitSystem(entities_definition::Array{EntityDefinition}, variables_definition::Array{VariableDefinition}
+TaxBenefitSystem(entities_definition::Array{EntityDefinition},
+  parameter_by_name::Dict{String, Union(Parameter, TaxScale)}, variables_definition::Array{VariableDefinition}
 ) = TaxBenefitSystem(
   [
     entity_definition.name => entity_definition
     for entity_definition in entities_definition
   ],
+  parameter_by_name,
   [
     variable_definition.name => variable_definition
     for variable_definition in variables_definition

@@ -151,17 +151,17 @@ function apply_tax_scale(tax_scale::DatedMarginalRateScale, array::Array{Number}
 end
 
 
-function at(tax_scale::AmountScale, date::Date)
+function parameter_at(tax_scale::AmountScale, date::Date)
   thresholds = DateRangeValue{Float32}[]
   amounts = DateRangeValue{Float32}[]
   for bracket in tax_scale.brackets
-    threshold = at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
+    threshold = value_at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if threshold === nothing
       continue
     end
 
-    amount = at(bracket.amount, date, check_start_date = tax_scale.check_start_date,
+    amount = value_at(bracket.amount, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if amount === nothing
       continue
@@ -174,23 +174,23 @@ function at(tax_scale::AmountScale, date::Date)
 end
 
 
-function at(tax_scale::RateScale, date::Date)
+function parameter_at(tax_scale::RateScale, date::Date)
   thresholds = DateRangeValue{Float32}[]
   rates = DateRangeValue{Float32}[]
   for bracket in tax_scale.brackets
-    threshold = at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
+    threshold = value_at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if threshold === nothing
       continue
     end
 
-    rate = at(bracket.rate, date, check_start_date = tax_scale.check_start_date,
+    rate = value_at(bracket.rate, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if rate === nothing
       continue
     end
 
-    base = at(bracket.base, date, check_start_date = tax_scale.check_start_date,
+    base = value_at(bracket.base, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if base !== nothing
       rate *= base

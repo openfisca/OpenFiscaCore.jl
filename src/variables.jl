@@ -82,47 +82,8 @@ any_person_in_entity(array_handle::VariableAtDate, entity::Entity) = any_person_
   array_handle.period, ALL_ROLES)
 
 
-function at(variable::PeriodicVariable, period::DatePeriod, default)
-  array = get_array(variable, period, nothing)
-  return array === nothing ? default : ConcreteVariableAtDate(variable, period)
-end
-
-at(variable::PermanentVariable, period::DatePeriod, default) = at(variable, default)
-
-at(variable::PeriodicVariable, default) = at(variable, variable.simulation.period, default)
-
-function at(variable::PermanentVariable, default)
-  array = variable.array
-  return isempty(array) ? default : variable
-end
-
-function at(variable::PeriodicVariable, period::DatePeriod)
-  variable_at_date = at(variable, period, nothing)
-  if variable_at_date === nothing
-    throw(KeyError(period))
-  end
-  return variable_at_date
-end
-
-at(variable::PeriodicVariable) = at(variable, variable.simulation.period)
-
-function at(variable::PermanentVariable)
-  variable = at(variable, period, nothing)
-  if variable === nothing
-    throw(KeyError(period))
-  end
-  return variable
-end
-
-
-macro at(variable, args...)
-  global simulation
-  return esc(:($variable = at(simulation, $(string(variable)), $(args...))))
-end
-
-
 function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_period = false)
-  variable_at_date = at(variable, period, nothing)
+  variable_at_date = variable_at(variable, period, nothing)
   if variable_at_date !== nothing
     return variable_at_date
   end
@@ -382,6 +343,45 @@ sum_person_in_entity(array_handle::VariableAtDate, entity::Entity, roles::Array{
 
 sum_person_in_entity(array_handle::VariableAtDate, entity::Entity) = sum_person_in_entity(array_handle, entity,
   array_handle.period, ALL_ROLES)
+
+
+function variable_at(variable::PeriodicVariable, period::DatePeriod, default)
+  array = get_array(variable, period, nothing)
+  return array === nothing ? default : ConcreteVariableAtDate(variable, period)
+end
+
+variable_at(variable::PermanentVariable, period::DatePeriod, default) = variable_at(variable, default)
+
+variable_at(variable::PeriodicVariable, default) = variable_at(variable, variable.simulation.period, default)
+
+function variable_at(variable::PermanentVariable, default)
+  array = variable.array
+  return isempty(array) ? default : variable
+end
+
+function variable_at(variable::PeriodicVariable, period::DatePeriod)
+  variable_at_date = variable_at(variable, period, nothing)
+  if variable_at_date === nothing
+    throw(KeyError(period))
+  end
+  return variable_at_date
+end
+
+variable_at(variable::PeriodicVariable) = variable_at(variable, variable.simulation.period)
+
+function variable_at(variable::PermanentVariable)
+  variable = variable_at(variable, period, nothing)
+  if variable === nothing
+    throw(KeyError(period))
+  end
+  return variable
+end
+
+
+macro variable_at(variable, args...)
+  global simulation
+  return esc(:($variable = variable_at(simulation, $(string(variable)), $(args...))))
+end
 
 
 zeros(variable::Variable) = zeros(variable.definition.cell_type, get_entity(variable).count)

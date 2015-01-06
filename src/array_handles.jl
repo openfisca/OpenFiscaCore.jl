@@ -55,6 +55,13 @@
 .<=(left::Union(Array, Number), right::ArrayHandle) = left .<= get_array(right)
 
 
+.==(left::ArrayHandle, right::ArrayHandle) = get_array(left) .== get_array(right)
+
+.==(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) .== right
+
+.==(left::Union(Array, Number), right::ArrayHandle) = left .== get_array(right)
+
+
 (&)(left::ArrayHandle, right::ArrayHandle) = get_array(left) & get_array(right)
 
 (&)(left::ArrayHandle, right::Union(Array, Number, BitArray)) = get_array(left) & right

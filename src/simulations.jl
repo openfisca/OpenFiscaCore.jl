@@ -41,13 +41,6 @@ Simulation(tax_benefit_system, period; trace = false) = Simulation(tax_benefit_s
   trace = trace)
 
 
-at(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),
-  default)
-
-at(simulation::Simulation, variable_name, period, default) = at(get_variable!(simulation, variable_name), period,
-  default)
-
-
 calculate(simulation::Simulation, variable_name, period) = calculate(get_variable!(simulation, variable_name), period)
 
 calculate(simulation::Simulation, variable_name) = calculate(
@@ -100,3 +93,10 @@ sum_months(simulation::Simulation, variable_name) = sum_months(
 #     end
 #   end
 # end
+
+
+variable_at(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),
+  default)
+
+variable_at(simulation::Simulation, variable_name, period, default) = variable_at(
+  get_variable!(simulation, variable_name), period, default)
