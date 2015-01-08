@@ -24,11 +24,14 @@ type Simulation <: AbstractSimulation
   tax_benefit_system::TaxBenefitSystem
   period::DatePeriod
   entity_by_name::Dict{String, Entity}
-  variable_by_name::Dict{String, Variable}
+  legislation_by_date_cache::Dict{Date, Legislation}
+  reference_legislation_by_date_cache::Dict{Date, Legislation}
   trace::Bool
+  variable_by_name::Dict{String, Variable}
 
   function Simulation(tax_benefit_system, period, variable_by_name; trace = false)
-    simulation = new(tax_benefit_system, period, Dict{String, Entity}(), variable_by_name, trace)
+    simulation = new(tax_benefit_system, period, (String => Entity)[], (Date => Legislation)[], (Date => Legislation)[],
+      trace, variable_by_name)
     simulation.entity_by_name = [
       name => Entity(simulation, entity_definition)
       for (name, entity_definition) in tax_benefit_system.entity_definition_by_name
@@ -70,6 +73,28 @@ function get_variable!(simulation::Simulation, variable_name)
 end
 
 
+function legislation_at(simulation::Simulation, path, date::Date; reference = false)
+  legislation_at_date = legislation_at(simulation, date, reference = reference)
+  return path !== nothing && !isempty(path) ? legislation_at(legislation_at_date, path) : legislation_at_date
+end
+
+legislation_at(simulation::Simulation, date::Date; reference = false) = (reference ?
+  get!(simulation.reference_legislation_by_date_cache, date) do
+    return reference_legislation_at(simulation.tax_benefit_system, date)
+  end
+:
+  get!(simulation.legislation_by_date_cache, date) do
+    return legislation_at(simulation.tax_benefit_system, date)
+  end
+)
+
+
+function parameter_at(simulation::Simulation, path, date::Date; reference = false)
+  legislation_at_date = parameter_at(simulation, date, reference = reference)
+  return parameter_at(legislation_at_date, path)
+end
+
+
 set_array(simulation::Simulation, variable_name, period::DatePeriod, array::Array) = set_array(
   get_variable!(simulation, variable_name), period, array)
 
@@ -86,13 +111,10 @@ sum_months(simulation::Simulation, variable_name) = sum_months(
   get_variable!(simulation, variable_name), simulation.period)
 
 
-# function tax_scale_at(simulation::Simulation, tax_scale_name, date; reference = false)
-#   if reference
-#     reference_legislation_leaf_by_name = get!(simulation.reference_legislation_leaf_by_name_by_date, tax_scale_name) do
-#       return Union(TaxRate, Parameter)
-#     end
-#   end
-# end
+function tax_scale_at(simulation::Simulation, path, date::Date; reference = false)
+  legislation_at_date = parameter_at(simulation, date, reference = reference)
+  return tax_scale_at(legislation_at_date, path)
+end
 
 
 variable_at(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),

@@ -22,31 +22,32 @@
 
 type TaxBenefitSystem
   entity_definition_by_name::Dict{String, EntityDefinition}
-  parameter_by_date_by_name::Dict{String, Dict{Date, Any}}  # Cache of parameter_at_date items
-  parameter_by_name::Dict{String, Union(Parameter, TaxScale)}
+  legislation_by_date_cache::WeakKeyDict{Date, Legislation}
+  legislation::Legislation
   person_name::String  # Name of person entity
+  reference  # Reference tax-benefit system. Used only by reforms. Note: Reforms can be chained.
   variable_definition_by_name::Dict{String, VariableDefinition}
 
-  TaxBenefitSystem(entity_definition_by_name::Dict{String, EntityDefinition},
-    parameter_by_name::Dict{String, Union(Parameter, TaxScale)},
-    variable_definition_by_name::Dict{String, VariableDefinition}
+  TaxBenefitSystem(entity_definition_by_name::Dict{String, EntityDefinition}, legislation::Legislation,
+    variable_definition_by_name::Dict{String, VariableDefinition}; reference = nothing
   ) = new(
     entity_definition_by_name,
-    Dict{String, Dict{Date, Any}}(),
-    parameter_by_name,
+    WeakKeyDict{Date, Legislation}(),
+    legislation,
     get_person_name(entity_definition_by_name),
+    reference,
     variable_definition_by_name,
   )
 end
 
-TaxBenefitSystem(entities_definition::Array{EntityDefinition},
-  parameter_by_name::Dict{String, Union(Parameter, TaxScale)}, variables_definition::Array{VariableDefinition}
+TaxBenefitSystem(entities_definition::Array{EntityDefinition}, legislation::Legislation,
+  variables_definition::Array{VariableDefinition}; reference = nothing
 ) = TaxBenefitSystem(
   [
     entity_definition.name => entity_definition
     for entity_definition in entities_definition
   ],
-  parameter_by_name,
+  legislation,
   [
     variable_definition.name => variable_definition
     for variable_definition in variables_definition
@@ -61,4 +62,18 @@ function get_person_name(entity_definition_by_name::Dict{String, EntityDefinitio
     end
   end
   error("List of entities ", entity_definition_by_name, " contains no person entity")
+end
+
+
+function legislation_at(tax_benefit_system::TaxBenefitSystem, date::Date; reference = false)
+  if reference
+    reference_tax_benefit_system = tax_benefit_system.reference
+    if reference_tax_benefit_system !== nothing
+      return legislation_at(reference_tax_benefit_system, date, reference = reference)
+    end
+    # Tax-benefit system is a reference tax-benefit system.
+  end
+  return get!(tax_benefit_system.legislation_by_date_cache, date) do
+    return legislation_at(tax_benefit_system.legislation, date)
+  end
 end

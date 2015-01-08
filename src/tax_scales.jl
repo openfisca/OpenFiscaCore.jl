@@ -151,16 +151,22 @@ function apply_tax_scale(tax_scale::DatedMarginalRateScale, array::Array{Number}
 end
 
 
-function parameter_at(tax_scale::AmountScale, date::Date)
+function tax_scale_at(tax_scale::AmountScale, date::Date)
   thresholds = DateRangeValue{Float32}[]
   amounts = DateRangeValue{Float32}[]
   for bracket in tax_scale.brackets
+    if bracket.threshold === nothing
+      continue
+    end
     threshold = value_at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if threshold === nothing
       continue
     end
 
+    if bracket.amount === nothing
+      continue
+    end
     amount = value_at(bracket.amount, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if amount === nothing
@@ -174,26 +180,34 @@ function parameter_at(tax_scale::AmountScale, date::Date)
 end
 
 
-function parameter_at(tax_scale::RateScale, date::Date)
-  thresholds = DateRangeValue{Float32}[]
-  rates = DateRangeValue{Float32}[]
+function tax_scale_at(tax_scale::RateScale, date::Date)
+  thresholds = Float32[]
+  rates = Float32[]
   for bracket in tax_scale.brackets
+    if bracket.threshold === nothing
+      continue
+    end
     threshold = value_at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if threshold === nothing
       continue
     end
 
+    if bracket.rate === nothing
+      continue
+    end
     rate = value_at(bracket.rate, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if rate === nothing
       continue
     end
 
-    base = value_at(bracket.base, date, check_start_date = tax_scale.check_start_date,
-      check_stop_date = tax_scale.check_stop_date)
-    if base !== nothing
-      rate *= base
+    if bracket.base !== nothing
+      base = value_at(bracket.base, date, check_start_date = tax_scale.check_start_date,
+        check_stop_date = tax_scale.check_stop_date)
+      if base !== nothing
+        rate *= base
+      end
     end
 
     push!(thresholds, threshold)

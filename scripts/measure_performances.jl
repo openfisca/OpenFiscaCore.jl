@@ -122,7 +122,7 @@ end
 
 tax_benefit_system = TaxBenefitSystem(
   [famille, individu],
-  Dict{String, Union(Parameter, TaxScale)}(),
+  Legislation(),
   [
     age,
     age_en_mois,

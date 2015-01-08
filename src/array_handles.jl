@@ -112,6 +112,20 @@ isless(left::Union(Array, Date, Number), right::ArrayHandle) = isless(left, get_
 length(array_handle::ArrayHandle) = length(get_array(array_handle))
 
 
+max(left::ArrayHandle, right::ArrayHandle) = max(get_array(left), get_array(right))
+
+max(left::ArrayHandle, right::Union(Array, Date, Number)) = max(get_array(left), right)
+
+max(left::Union(Array, Date, Number), right::ArrayHandle) = max(left, get_array(right))
+
+
+min(left::ArrayHandle, right::ArrayHandle) = min(get_array(left), get_array(right))
+
+min(left::ArrayHandle, right::Union(Array, Date, Number)) = min(get_array(left), right)
+
+min(left::Union(Array, Date, Number), right::ArrayHandle) = min(left, get_array(right))
+
+
 next(array_handle::ArrayHandle, state) = next(get_array(array_handle), state)
 
 
