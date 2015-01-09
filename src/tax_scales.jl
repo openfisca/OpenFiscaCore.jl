@@ -147,7 +147,7 @@ function apply_tax_scale(tax_scale::DatedMarginalRateScale, array::Array{Number}
   base = repeat(array, outer = [1, length(tax_scale.thresholds)])
   thresholds = repeat(hcat(tax_scale.thresholds', Inf), outer = [length(array), 1])
   a = max(min(base, thresholds[:, 2:end]) - thresholds[:, 1:end - 1], 0)
-  return a * tax_scale.amounts
+  return a * tax_scale.rates
 end
 
 
