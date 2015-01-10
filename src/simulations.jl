@@ -50,10 +50,10 @@ calculate(simulation::Simulation, variable_name) = calculate(
   get_variable!(simulation, variable_name), simulation.period)
 
 
-divide_year(simulation::Simulation, variable_name, period) = divide_year(get_variable!(simulation, variable_name),
+divide_calculate(simulation::Simulation, variable_name, period) = divide_calculate(get_variable!(simulation, variable_name),
   period)
 
-divide_year(simulation::Simulation, variable_name) = divide_year(
+divide_calculate(simulation::Simulation, variable_name) = divide_calculate(
   get_variable!(simulation, variable_name), simulation.period)
 
 
@@ -90,7 +90,7 @@ legislation_at(simulation::Simulation, date::Date; reference = false) = (referen
 
 
 function parameter_at(simulation::Simulation, path, date::Date; reference = false)
-  legislation_at_date = parameter_at(simulation, date, reference = reference)
+  legislation_at_date = legislation_at(simulation, date, reference = reference)
   return parameter_at(legislation_at_date, path)
 end
 
@@ -105,14 +105,19 @@ set_array(simulation::Simulation, variable_name, array::Array) = set_array(
   get_variable!(simulation, variable_name), array)
 
 
-sum_months(simulation::Simulation, variable_name, period) = sum_months(get_variable!(simulation, variable_name), period)
+function show(io::IO, simulation::Simulation)
+  print(io, "Simulation(tax_benefit_system, $(simulation.period))")
+end
 
-sum_months(simulation::Simulation, variable_name) = sum_months(
+
+sum_calculate(simulation::Simulation, variable_name, period) = sum_calculate(get_variable!(simulation, variable_name), period)
+
+sum_calculate(simulation::Simulation, variable_name) = sum_calculate(
   get_variable!(simulation, variable_name), simulation.period)
 
 
 function tax_scale_at(simulation::Simulation, path, date::Date; reference = false)
-  legislation_at_date = parameter_at(simulation, date, reference = reference)
+  legislation_at_date = legislation_at(simulation, date, reference = reference)
   return tax_scale_at(legislation_at_date, path)
 end
 

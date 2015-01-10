@@ -23,12 +23,12 @@
 module OpenFiscaCore
 
 
-export *, +, -, .<, .<=, .==, .*, .+, .-, ./, &, |, !, @calculate, @divide_year, @sum_months, @variable_at, add_member, add_to_legislation, AmountBracket, AmountScale, any_person_in_entity, apply_tax_scale, ArrayHandle, assert_near, at, beginswith, calculate, convert, DatedAmountScale, DatedLinearAverageRateScale, DatedMarginalRateScale, DatedRateScale, DatedTaxScale, DatePeriod, DateRangeValue, DayPeriod, days, default_array, div, divide_year, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, get_array, get_entity, get_variable!, intersection, isfinite, isless, Legislation, legislation_at, length, LinearAverageRateScale, MarginalRateScale, max, min, MonthPeriod, next, Parameter, parameter_at, PeriodicVariable, PermanentVariable, RateBracket, RateScale, real, Role, set_array, Simulation, single_person_in_entity, start, stop_date, sum_months, sum_person_in_entity, tax_scale_at, TaxBenefitSystem, TaxScale, unit_type, UnitIntervalFloat32, value_at, variable_at, VariableAtDate, VariableAtDateOrPermanent, VariableDefinition, YearPeriod, zeros
+export *, +, -, .<, .<=, .==, .!=, .*, .+, .-, ./, &, |, !, @calculate, @divide_calculate, @sum_calculate, @variable_at, add_member, add_to_legislation, AmountBracket, AmountScale, any_person_in_entity, apply_tax_scale, ArrayHandle, assert_near, at, beginswith, calculate, convert, DatedAmountScale, DatedLinearAverageRateScale, DatedMarginalRateScale, DatedRateScale, DatedTaxScale, DatePeriod, DateRangeValue, DayPeriod, days, default_array, div, divide_calculate, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, first_day, get_array, get_entity, get_variable!, intersection, isfinite, isless, Legislation, legislation_at, length, LinearAverageRateScale, MarginalRateScale, max, min, MonthPeriod, next, Parameter, parameter_at, PeriodicVariable, PermanentVariable, RateBracket, RateScale, real, Role, set_array, show, Simulation, single_person_in_entity, split_person_by_role, start, stop_date, sum_calculate, sum_person_in_entity, tax_scale_at, TaxBenefitSystem, TaxScale, unit_type, UnitIntervalFloat32, value_at, variable_at, VariableAtDate, VariableAtDateOrPermanent, VariableDefinition, YearPeriod, zeros
 
 
 using Dates
 
-import Base: *, +, -, .<, .<=, .==, .*, .+, .-, ./, &, |, !, beginswith, convert, div, done, isfinite, isless, length, max, min, next, real, start, zeros
+import Base: *, +, -, .<, .<=, .==, .!=, .*, .+, .-, ./, &, |, !, beginswith, convert, div, done, isfinite, isless, length, max, min, next, real, show, start, zeros
 
 
 abstract AbstractSimulation

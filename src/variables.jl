@@ -87,9 +87,16 @@ function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_
   if variable_at_date !== nothing
     return variable_at_date
   end
-  formula_period, array_handle = variable.definition.formula(variable.simulation, variable, period)
-  if !accept_other_period && formula_period != period
-    error("Requested period $period differs from $formula_period returned by variable $(variable.definition.name).")
+  definition = variable.definition
+  if ((definition.start_date === nothing || definition.start_date <= period.start)
+      && (definition.stop_date === nothing || period.start <= definition.stop_date))
+    formula_period, array_handle = definition.formula(variable.simulation, variable, period)
+    if !accept_other_period && formula_period != period
+      error("Requested period $period differs from $formula_period returned by variable $(definition.name).")
+    end
+  else
+    formula_period = period
+    array_handle = default_array(variable)
   end
   return set_array(variable, formula_period, get_array(array_handle))
 end
@@ -122,18 +129,25 @@ function default_array(variable::Variable)
 end
 
 
-function divide_year(variable::PeriodicVariable, period::MonthPeriod)
+function divide_calculate(variable::PeriodicVariable, period::MonthPeriod)
   variable_at_date = calculate(variable, period, accept_other_period = true)
   if !isa(variable_at_date.period, YearPeriod)
-    error("Requested a year period. Got $formula_period returned by variable $(variable.definition.name).")
+    error("Requested a year period. Got $(variable_at_date.period) returned by variable $(variable.definition.name).")
   end
-  return ConcreteEntityArray(get_entity(variable), get_array(variable_at_date) ./ (12 * variable_at_date.period.length))
+  if period.start < variable_at_date.period.start || stop_date(variable_at_date.period) < stop_date(period)
+    error("Requested period $(variable_at_date.period) returned by variable $(variable.definition.name) doesn't include"
+      * " requested period $period.")
+  end
+  return ConcreteEntityArray(get_entity(variable), get_array(variable_at_date) .* period.length
+    ./ (12 * variable_at_date.period.length))
 end
 
+divide_calculate(variable::PeriodicVariable, period::YearPeriod) = calculate(variable, period)
 
-macro divide_year(variable, period)
+
+macro divide_calculate(variable, period)
   global simulation
-  return esc(:($variable = divide_year(simulation, $(string(variable)), $period)))
+  return esc(:($variable = divide_calculate(simulation, $(string(variable)), $period)))
 end
 
 
@@ -284,27 +298,72 @@ single_person_in_entity(array_handle::VariableAtDate, entity::Entity, role::Role
   array_handle, entity, array_handle.period, role)
 
 
-function sum_months(variable::PeriodicVariable, period::YearPeriod)
-  array = zeros(variable)
-  start_year, start_month, start_day = yearmonthday(period.start)
-  for month_index in 0:11
-    year = start_year
-    month = start_month + month_index
-    if month > 12
-      month -= 12
-      year += 1
+function split_person_by_role(array_handle::VariableAtDateOrPermanent, entity::Entity, period::DatePeriod,
+    roles::Array{Role})
+  @assert(is_person(get_entity(array_handle)))
+  @assert(!is_person(entity))
+  definition = get_variable(array_handle).definition
+  if roles == ALL_ROLES
+    # To ensure that existing formulas don't fail, ensure there is always at least 11 roles.
+    roles = [
+      Role(i)
+      for i in 1:max(entity.roles_count, 11)
+    ]
+  end
+  entity_array_by_role = (Role => Array)[
+    role => fill!(Array(definition.cell_type, entity.count), definition.cell_default)
+    for role in roles
+  ]
+  for (index_cell, role_cell, value_cell) in zip(
+      get_array(get_index_variable(entity)),
+      get_array(get_role_variable(entity), period),
+      get_array(array_handle),
+    )
+    role = Role(role_cell)
+    if role in roles
+      entity_array_by_role[role][index_cell] = value_cell
     end
-    month_period = MonthPeriod(Date(year, month, start_day))
-    variable_at_date = calculate(variable, month_period)
-    array += get_array(variable_at_date)
+  end
+  return (Role => ConcreteEntityArray)[
+    role => ConcreteEntityArray(entity, entity_array)
+    for (role, entity_array) in entity_array_by_role
+  ]
+end
+
+split_person_by_role(array_handle::VariableAtDateOrPermanent, entity::Entity, period::DatePeriod
+) = split_person_by_role(array_handle, entity, period, ALL_ROLES)
+
+split_person_by_role(array_handle::VariableAtDate, entity::Entity, roles::Array{Role}) = split_person_by_role(
+  array_handle, entity, array_handle.period, roles)
+
+split_person_by_role(array_handle::VariableAtDate, entity::Entity) = split_person_by_role(array_handle, entity,
+  array_handle.period, ALL_ROLES)
+
+
+sum_calculate(variable::PeriodicVariable, period::MonthPeriod) = calculate(variable, period)
+
+function sum_calculate(variable::PeriodicVariable, period::YearPeriod)
+  array = zeros(variable)
+  year, month, day = yearmonthday(period.start)
+  for period_number in 1:period.length
+    for month_index in 0:11
+      month_period = MonthPeriod(Date(year, month, day))
+      variable_at_date = calculate(variable, month_period)
+      array += get_array(variable_at_date)
+      month += 1
+      if month > 12
+        month -= 12
+        year += 1
+      end
+    end
   end
   return ConcreteEntityArray(get_entity(variable), array)
 end
 
 
-macro sum_months(variable, period)
+macro sum_calculate(variable, period)
   global simulation
-  return esc(:($variable = sum_months(simulation, $(string(variable)), $period)))
+  return esc(:($variable = sum_calculate(simulation, $(string(variable)), $period)))
 end
 
 

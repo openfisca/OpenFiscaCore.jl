@@ -143,12 +143,22 @@ function apply_tax_scale(tax_scale::DatedLinearAverageRateScale, array::Array{Nu
   return array .* (bracket_average_start_rate + (array - bracket_threshold) * average_rate_slope)
 end
 
-function apply_tax_scale(tax_scale::DatedMarginalRateScale, array::Array{Number})
+function apply_tax_scale(tax_scale::DatedMarginalRateScale, array::Array; factor = 1, round_base_decimals = nothing)
   base = repeat(array, outer = [1, length(tax_scale.thresholds)])
-  thresholds = repeat(hcat(tax_scale.thresholds', Inf), outer = [length(array), 1])
+  if round_base_decimals !== nothing
+    factor = round(factor, round_base_decimals)
+  end
+  thresholds = repeat(hcat(factor .* tax_scale.thresholds', Inf), outer = [length(array), 1])
   a = max(min(base, thresholds[:, 2:end]) - thresholds[:, 1:end - 1], 0)
-  return a * tax_scale.rates
+  if round_base_decimals === nothing
+    return a * tax_scale.rates
+  end
+    return sum(round(a, round_base_decimals) * repeat(tax_scale.rates, outer = [1, length(array)]), 2)
 end
+
+apply_tax_scale(tax_scale::DatedMarginalRateScale, array_handle::ArrayHandle; factor = 1,
+    round_base_decimals = nothing) = apply_tax_scale(tax_scale, get_array(array_handle); factor = factor,
+        round_base_decimals = round_base_decimals)
 
 
 function tax_scale_at(tax_scale::AmountScale, date::Date)

@@ -22,16 +22,16 @@
 
 *(left::ArrayHandle, right::ArrayHandle) = get_array(left) * get_array(right)
 
-*(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) * right
+*(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) * right
 
-*(left::Union(Array, Number), right::ArrayHandle) = left * get_array(right)
+*(left::Union(Array, BitArray, Number), right::ArrayHandle) = left * get_array(right)
 
 
 +(left::ArrayHandle, right::ArrayHandle) = get_array(left) + get_array(right)
 
-+(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) + right
++(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) + right
 
-+(left::Union(Array, Number), right::ArrayHandle) = left + get_array(right)
++(left::Union(Array, BitArray, Number), right::ArrayHandle) = left + get_array(right)
 
 
 -(left::ArrayHandle, right::ArrayHandle) = get_array(left) - get_array(right)
@@ -43,37 +43,44 @@
 
 .<(left::ArrayHandle, right::ArrayHandle) = get_array(left) .< get_array(right)
 
-.<(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) .< right
+.<(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) .< right
 
-.<(left::Union(Array, Number), right::ArrayHandle) = left .< get_array(right)
+.<(left::Union(Array, BitArray, Number), right::ArrayHandle) = left .< get_array(right)
 
 
 .<=(left::ArrayHandle, right::ArrayHandle) = get_array(left) .<= get_array(right)
 
-.<=(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) .<= right
+.<=(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) .<= right
 
-.<=(left::Union(Array, Number), right::ArrayHandle) = left .<= get_array(right)
+.<=(left::Union(Array, BitArray, Number), right::ArrayHandle) = left .<= get_array(right)
 
 
 .==(left::ArrayHandle, right::ArrayHandle) = get_array(left) .== get_array(right)
 
-.==(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) .== right
+.==(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) .== right
 
-.==(left::Union(Array, Number), right::ArrayHandle) = left .== get_array(right)
+.==(left::Union(Array, BitArray, Number), right::ArrayHandle) = left .== get_array(right)
+
+
+.!=(left::ArrayHandle, right::ArrayHandle) = get_array(left) .!= get_array(right)
+
+.!=(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) .!= right
+
+.!=(left::Union(Array, BitArray, Number), right::ArrayHandle) = left .!= get_array(right)
 
 
 .*(left::ArrayHandle, right::ArrayHandle) = get_array(left) .* get_array(right)
 
-.*(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) .* right
+.*(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) .* right
 
-.*(left::Union(Array, Number), right::ArrayHandle) = left .* get_array(right)
+.*(left::Union(Array, BitArray, Number), right::ArrayHandle) = left .* get_array(right)
 
 
 .+(left::ArrayHandle, right::ArrayHandle) = get_array(left) .+ get_array(right)
 
-.+(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) .+ right
+.+(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) .+ right
 
-.+(left::Union(Array, Number), right::ArrayHandle) = left .+ get_array(right)
+.+(left::Union(Array, BitArray, Number), right::ArrayHandle) = left .+ get_array(right)
 
 
 .-(left::ArrayHandle, right::ArrayHandle) = get_array(left) .- get_array(right)
@@ -85,33 +92,33 @@
 
 ./(left::ArrayHandle, right::ArrayHandle) = get_array(left) ./ get_array(right)
 
-./(left::ArrayHandle, right::Union(Array, Number)) = get_array(left) ./ right
+./(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) ./ right
 
-./(left::Union(Array, Number), right::ArrayHandle) = left ./ get_array(right)
+./(left::Union(Array, BitArray, Number), right::ArrayHandle) = left ./ get_array(right)
 
 
 
 (&)(left::ArrayHandle, right::ArrayHandle) = get_array(left) & get_array(right)
 
-(&)(left::ArrayHandle, right::Union(Array, Number, BitArray)) = get_array(left) & right
+(&)(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) & right
 
-(&)(left::Union(Array, Number, BitArray), right::ArrayHandle) = left & get_array(right)
+(&)(left::Union(Array, BitArray, Number), right::ArrayHandle) = left & get_array(right)
 
 
 |(left::ArrayHandle, right::ArrayHandle) = get_array(left) | get_array(right)
 
-|(left::ArrayHandle, right::Union(Array, Number, BitArray)) = get_array(left) | right
+|(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) | right
 
-|(left::Union(Array, Number, BitArray), right::ArrayHandle) = left | get_array(right)
+|(left::Union(Array, BitArray, Number), right::ArrayHandle) = left | get_array(right)
 
 
 !(array_handle::ArrayHandle) = !get_array(array_handle)
 
 
-assert_near(left::Array, right::ArrayHandle; error_margin = 1) = assert_near(left, get_array(right),
+assert_near(left::Union(Array, Number), right::ArrayHandle; error_margin = 1) = assert_near(left, get_array(right),
   error_margin = error_margin)
 
-assert_near(left::ArrayHandle, right::Array; error_margin = 1) = assert_near(get_array(left), right,
+assert_near(left::ArrayHandle, right::Union(Array, Number); error_margin = 1) = assert_near(get_array(left), right,
   error_margin = error_margin)
 
 assert_near(left::ArrayHandle, right::ArrayHandle; error_margin = 1) = assert_near(get_array(left), get_array(right),

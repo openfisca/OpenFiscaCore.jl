@@ -60,6 +60,11 @@ days(period::DatePeriod) = period.start - stop_date(period) + 1
 empty_period = EmptyPeriod()
 
 
+first_day(period::MonthPeriod) = MonthPeriod(firstdayofmonth(period.start), period.length)
+
+first_day(period::YearPeriod) = YearPeriod(firstdayofyear(period.start), period.length)
+
+
 function intersection(period::DatePeriod, start::Date, stop::Date)
   period_start = period.start
   period_stop = stop_date(period)
