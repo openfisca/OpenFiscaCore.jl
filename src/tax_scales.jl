@@ -21,10 +21,10 @@
 
 
 abstract Bracket
-abstract DatedTaxScale
-abstract DatedRateScale <: DatedTaxScale
 abstract TaxScale
+abstract TaxScaleAtDate
 abstract RateScale <: TaxScale
+abstract RateScaleAtDate <: TaxScaleAtDate
 
 
 # Amount-based tax scales
@@ -52,7 +52,7 @@ immutable AmountScale <: TaxScale
 end
 
 
-immutable DatedAmountScale <: DatedTaxScale
+immutable AmountScaleAtDate <: TaxScaleAtDate
   amounts::Array{Float32}
   thresholds::Array{Float32}
   # unit ?
@@ -62,14 +62,14 @@ end
 # Rated-based tax scales
 
 
-immutable DatedLinearAverageRateScale <: DatedRateScale
+immutable LinearAverageRateScaleAtDate <: RateScaleAtDate
   rates::Array{Float32}
   thresholds::Array{Float32}
   # unit ?
 end
 
 
-immutable DatedMarginalRateScale <: DatedRateScale
+immutable MarginalRateScaleAtDate <: RateScaleAtDate
   rates::Array{Float32}
   thresholds::Array{Float32}
   # unit ?
@@ -116,17 +116,17 @@ end
 # Functions
 
 
-apply_tax_scale(tax_scale::DatedTaxScale, array_handle::ArrayHandle) = apply_tax_scale(tax_scale, get_array(
+apply_tax_scale(tax_scale::TaxScaleAtDate, array_handle::ArrayHandle) = apply_tax_scale(tax_scale, get_array(
   array_handle))
 
-function apply_tax_scale(tax_scale::DatedAmountScale, array::Array{Number})
+function apply_tax_scale(tax_scale::AmountScaleAtDate, array::Array{Number})
   base = repeat(array, outer = [1, length(tax_scale.thresholds)])
   thresholds = repeat(hcat(tax_scale.thresholds', Inf), outer = [length(array), 1])
   a = min(base, thresholds[:, 2:end]) - thresholds[:, 1:end - 1]
   return (a .> 0) * tax_scale.amounts
 end
 
-function apply_tax_scale(tax_scale::DatedLinearAverageRateScale, array::Array{Number})
+function apply_tax_scale(tax_scale::LinearAverageRateScaleAtDate, array::Array{Number})
   if length(tax_scale.rates) == 1
     return array * tax_scale.rates[1]
   end
@@ -143,7 +143,7 @@ function apply_tax_scale(tax_scale::DatedLinearAverageRateScale, array::Array{Nu
   return array .* (bracket_average_start_rate + (array - bracket_threshold) * average_rate_slope)
 end
 
-function apply_tax_scale(tax_scale::DatedMarginalRateScale, array::Array; factor = 1, round_base_decimals = nothing)
+function apply_tax_scale(tax_scale::MarginalRateScaleAtDate, array::Array; factor = 1, round_base_decimals = nothing)
   base = repeat(array, outer = [1, length(tax_scale.thresholds)])
   if round_base_decimals !== nothing
     factor = round(factor, round_base_decimals)
@@ -156,7 +156,7 @@ function apply_tax_scale(tax_scale::DatedMarginalRateScale, array::Array; factor
     return sum(round(a, round_base_decimals) * repeat(tax_scale.rates, outer = [1, length(array)]), 2)
 end
 
-apply_tax_scale(tax_scale::DatedMarginalRateScale, array_handle::ArrayHandle; factor = 1,
+apply_tax_scale(tax_scale::MarginalRateScaleAtDate, array_handle::ArrayHandle; factor = 1,
     round_base_decimals = nothing) = apply_tax_scale(tax_scale, get_array(array_handle); factor = factor,
         round_base_decimals = round_base_decimals)
 
@@ -186,7 +186,7 @@ function tax_scale_at(tax_scale::AmountScale, date::Date)
     push!(thresholds, threshold)
     push!(amounts, amount)
   end
-  return DatedAmountScale(thresholds, amounts)  # TODO: option?
+  return AmountScaleAtDate(thresholds, amounts)  # TODO: option?
 end
 
 
@@ -224,8 +224,8 @@ function tax_scale_at(tax_scale::RateScale, date::Date)
     push!(rates, rate)
   end
   if isa(tax_scale, LinearAverageRateScale)
-    return DatedLinearAverageRateScale(thresholds, rates)  # TODO: option?, unit?
+    return LinearAverageRateScaleAtDate(thresholds, rates)  # TODO: option?, unit?
   end
   tax_scale::MarginalRateScale
-  return DatedMarginalRateScale(thresholds, rates)  # TODO: option?
+  return MarginalRateScaleAtDate(thresholds, rates)  # TODO: option?
 end
