@@ -82,8 +82,12 @@ function add_member(entity; args...)
         get!(value_by_name, other_entity_definition.index_variable_name) do
           return other_entity.count
         end
-        @assert(haskey(value_by_name, other_entity_definition.role_variable_name),
+        role = get(value_by_name, other_entity_definition.role_variable_name, nothing)
+        @assert(role !== nothing,
           "Missing role $(other_entity_definition.role_variable_name) in person arguments: $(value_by_name)")
+        if role > other_entity.roles_count
+          other_entity.roles_count = role
+        end
       end
     end
   end
@@ -106,6 +110,7 @@ function add_member(entity; args...)
       array[member_index] = value
     end
   end
+
   return member_index
 end
 
