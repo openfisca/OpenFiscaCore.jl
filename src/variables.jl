@@ -64,7 +64,7 @@ function any_person_in_entity(array_handle::VariableAtPeriodOrPermanent, entity:
           get_array(get_role_variable(entity), period),
           get_array(array_handle),
         )
-      if role_cell in roles
+      if Role(role_cell) in roles
         entity_array[index_cell] += value_cell
       end
     end
@@ -223,7 +223,7 @@ function entity_to_person(array_handle::VariableAtPeriodOrPermanent, period::Dat
   else
     cell_default = variable_definition.cell_default
     person_array = variable_definition.cell_type[
-      role_cell in roles ? array[index_cell] : cell_default
+      Role(role_cell) in roles ? array[index_cell] : cell_default
       for (index_cell, role_cell) in zip(
         get_array(get_index_variable(entity)),
         get_array(get_role_variable(entity), period),
@@ -341,7 +341,7 @@ function single_person_in_entity(array_handle::VariableAtPeriodOrPermanent, enti
         get_array(get_role_variable(entity), period),
         get_array(array_handle),
       )
-    if role_cell === role
+    if Role(role_cell) === role
       entity_array[index_cell] = value_cell
     end
   end
@@ -444,7 +444,7 @@ function sum_person_in_entity(array_handle::VariableAtPeriodOrPermanent, entity:
           get_array(get_role_variable(entity), period),
           get_array(array_handle),
         )
-      if role_cell in roles
+      if Role(role_cell) in roles
         entity_array[index_cell] += value_cell
       end
     end
