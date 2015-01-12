@@ -335,7 +335,7 @@ function single_person_in_entity(array_handle::VariableAtPeriodOrPermanent, enti
     role::Role)
   @assert(is_person(get_entity(array_handle)))
   @assert(!is_person(entity))
-  entity_array = Array(get_variable(array_handle).definition.cell_type, entity.count)
+  entity_array = zeros(get_variable(array_handle).definition.cell_type, entity.count)
   for (index_cell, role_cell, value_cell) in zip(
         get_array(get_index_variable(entity)),
         get_array(get_role_variable(entity), period),
