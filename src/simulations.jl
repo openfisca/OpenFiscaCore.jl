@@ -95,18 +95,31 @@ function parameter_at(simulation::Simulation, path, date::Date; reference = fals
 end
 
 
+function print(io::IO, simulation::Simulation, indent = 0)
+  print(io, "Simulation(tax_benefit_system, $(simulation.period))", indent)
+end
+
+
 set_array(simulation::Simulation, variable_name, period::DatePeriod, array::Array) = set_array(
   get_variable!(simulation, variable_name), period, array)
 
-set_array(simulation::Simulation, variable_name, array_handle::VariableAtDateOrPermanent) = set_array(
+set_array(simulation::Simulation, variable_name, array_handle::VariableAtPeriodOrPermanent) = set_array(
   get_variable!(simulation, variable_name), array_handle)
 
 set_array(simulation::Simulation, variable_name, array::Array) = set_array(
   get_variable!(simulation, variable_name), array)
 
 
-function show(io::IO, simulation::Simulation)
-  print(io, "Simulation(tax_benefit_system, $(simulation.period))")
+function stringify_variables_name_at_period(simulation::Simulation, variables_name_at_period::Array{NameAtPeriod})
+  return join(
+    String[
+      "$(variable.definition.name)@$(get_entity(variable).definition.name)<$period>$(get_array(variable, period))"
+      for (variable, period) in [
+        (simulation.variable_by_name[variable_name_at_period.name], variable_name_at_period.period)
+        for variable_name_at_period in variables_name_at_period
+      ]
+    ],
+    ", ")
 end
 
 
