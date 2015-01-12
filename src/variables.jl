@@ -90,7 +90,32 @@ function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_
   definition = variable.definition
   if ((definition.start_date === nothing || definition.start_date <= period.start)
       && (definition.stop_date === nothing || period.start <= definition.stop_date))
-    formula_period, array_handle = definition.formula(variable.simulation, variable, period)
+    simulation = variable.simulation
+    debug = simulation.debug
+    debug_all = simulation.debug_all
+    trace = simulation.trace
+    debug_or_trace = debug || trace
+    if debug_or_trace
+      push!(simulation.formulas_input_stack, FormulaInput(definition.name, period))
+    end
+    formula_period, array_handle = definition.formula(simulation, variable, period)
+    if debug_or_trace
+      formula_input = pop!(simulation.formulas_input_stack)
+      if !debug_all || trace
+        has_only_default_input_variables = all([
+          all(get_array(input_variable, input_variable_period) .== input_variable.definition.cell_default)
+          for (input_variable, input_variable_period) in [
+            (simulation.variable_by_name[input_variable_name_at_period.name], input_variable_name_at_period.period)
+            for input_variable_name_at_period in formula_input.variables_name_at_period
+          ]
+        ])
+      end
+      if debug && (debug_all || !has_only_default_input_variables)
+        info("<=> $(definition.name)@$(get_entity(variable).definition.name)<$period>"
+          * "($(stringify_variables_name_at_period(simulation, formula_input.variables_name_at_period))) -->"
+          * " <$formula_period>$(get_array(array_handle))")
+      end
+    end
     if !accept_other_period && formula_period != period
       error("Requested period $period differs from $formula_period returned by variable $(definition.name).")
     end
@@ -107,9 +132,34 @@ calculate(variable::PeriodicVariable) = calculate(variable, variable.simulation.
 
 function calculate(variable::PermanentVariable)
   array = get_array!(variable) do
-    array_handle = variable.definition.formula(variable.simulation, variable)
+    definition = variable.definition
+    simulation = variable.simulation
+    debug = simulation.debug
+    debug_all = simulation.debug_all
+    trace = simulation.trace
+    debug_or_trace = debug || trace
+    if debug_or_trace
+      push!(simulation.formulas_input_stack, FormulaInput(definition.name))
+    end
+    array_handle = definition.formula(simulation, variable)
     array = get_array(array_handle)
     set_array(variable, array)
+    if debug_or_trace
+      formula_input = pop!(simulation.formulas_input_stack)
+      if !debug_all || trace
+        has_only_default_input_variables = all([
+          all(get_array(input_variable, input_variable_period) .== input_variable.definition.cell_default)
+          for (input_variable, input_variable_period) in [
+            (simulation.variable_by_name[input_variable_name_at_period.name], input_variable_name_at_period.period)
+            for input_variable_name_at_period in formula_input.variables_name_at_period
+          ]
+        ])
+      end
+      if debug && (debug_all || !has_only_default_input_variables)
+        info("<=> $(definition.name)@$(get_entity(variable).definition.name)"
+          * "($(stringify_variables_name_at_period(simulation, formula_input.variables_name_at_period))) --> $(array)")
+      end
+    end
     return array
   end
   return variable
@@ -130,6 +180,10 @@ end
 
 
 function divide_calculate(variable::PeriodicVariable, period::MonthPeriod)
+  variable_at_date = variable_at(variable, period, nothing)
+  if variable_at_date !== nothing
+    return variable_at_date
+  end
   variable_at_date = calculate(variable, period, accept_other_period = true)
   if !isa(variable_at_date.period, YearPeriod)
     error("Requested a year period. Got $(variable_at_date.period) returned by variable $(variable.definition.name).")
@@ -138,7 +192,7 @@ function divide_calculate(variable::PeriodicVariable, period::MonthPeriod)
     error("Requested period $(variable_at_date.period) returned by variable $(variable.definition.name) doesn't include"
       * " requested period $period.")
   end
-  return ConcreteEntityArray(get_entity(variable), get_array(variable_at_date) .* period.length
+  return set_array(variable, period, get_array(variable_at_date) .* period.length
     ./ (12 * variable_at_date.period.length))
 end
 
@@ -343,6 +397,10 @@ split_person_by_role(array_handle::VariableAtPeriod, entity::Entity) = split_per
 sum_calculate(variable::PeriodicVariable, period::MonthPeriod) = calculate(variable, period)
 
 function sum_calculate(variable::PeriodicVariable, period::YearPeriod)
+  variable_at_date = variable_at(variable, period, nothing)
+  if variable_at_date !== nothing
+    return variable_at_date
+  end
   array = zeros(variable)
   year, month, day = yearmonthday(period.start)
   for period_number in 1:period.length
@@ -357,7 +415,7 @@ function sum_calculate(variable::PeriodicVariable, period::YearPeriod)
       end
     end
   end
-  return ConcreteEntityArray(get_entity(variable), array)
+  return set_array(variable, period, array)
 end
 
 

@@ -20,18 +20,48 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+immutable NameAtDate
+  name::String
+  date::Date
+end
+
+
+immutable NameAtPeriod
+  name::String
+  period::Union(DatePeriod, Nothing)
+end
+
+
+type FormulaInput
+  variable_name::String
+  period::Union(DatePeriod, Nothing)
+  parameters_name_at_date::Array{NameAtDate}
+  variables_name_at_period::Array{NameAtPeriod}
+
+  FormulaInput(variable_name, period) = new(variable_name, period, NameAtDate[], NameAtPeriod[])
+end
+
+FormulaInput(variable_name) = FormulaInput(variable_name, nothing)
+
+
 type Simulation <: AbstractSimulation
   tax_benefit_system::TaxBenefitSystem
   period::DatePeriod
+  debug::Bool
+  debug_all::Bool  # TODO: To rename to debug_default?
   entity_by_name::Dict{String, Entity}
+  formulas_input_stack::Array{FormulaInput}
   legislation_by_date_cache::Dict{Date, Legislation}
   reference_legislation_by_date_cache::Dict{Date, Legislation}
   trace::Bool
   variable_by_name::Dict{String, Variable}
 
-  function Simulation(tax_benefit_system, period, variable_by_name; trace = false)
-    simulation = new(tax_benefit_system, period, (String => Entity)[], (Date => Legislation)[], (Date => Legislation)[],
-      trace, variable_by_name)
+  function Simulation(tax_benefit_system, period, variable_by_name; debug = false, debug_all = false, trace = false)
+    if !debug && debug_all
+      debug = true
+    end
+    simulation = new(tax_benefit_system, period, debug, debug_all, (String => Entity)[], FormulaInput[],
+      (Date => Legislation)[], (Date => Legislation)[], trace, variable_by_name)
     simulation.entity_by_name = [
       name => Entity(simulation, entity_definition)
       for (name, entity_definition) in tax_benefit_system.entity_definition_by_name
@@ -40,21 +70,36 @@ type Simulation <: AbstractSimulation
   end
 end
 
-Simulation(tax_benefit_system, period; trace = false) = Simulation(tax_benefit_system, period, Dict{String, Variable}(),
-  trace = trace)
+Simulation(tax_benefit_system, period; debug = false, debug_all = false, trace = false) = Simulation(tax_benefit_system,
+  period, Dict{String, Variable}(), debug = debug, debug_all = debug_all, trace = trace)
 
 
-calculate(simulation::Simulation, variable_name, period) = calculate(get_variable!(simulation, variable_name), period)
+function calculate(simulation::Simulation, variable_name, period)
+  if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
+    variable_name_at_period = NameAtPeriod(variable_name, period)
+    calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
+    if !(variable_name_at_period in calling_formula_input_variables_name_at_period)
+      push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
+    end
+  end
+  return calculate(get_variable!(simulation, variable_name), period)
+end
 
-calculate(simulation::Simulation, variable_name) = calculate(
-  get_variable!(simulation, variable_name), simulation.period)
+calculate(simulation::Simulation, variable_name) = calculate(simulation, variable_name, simulation.period)
 
 
-divide_calculate(simulation::Simulation, variable_name, period) = divide_calculate(get_variable!(simulation, variable_name),
-  period)
+function divide_calculate(simulation::Simulation, variable_name, period)
+  if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
+    variable_name_at_period = NameAtPeriod(variable_name, period)
+    calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
+    if !(variable_name_at_period in calling_formula_input_variables_name_at_period)
+      push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
+    end
+  end
+  return divide_calculate(get_variable!(simulation, variable_name), period)
+end
 
-divide_calculate(simulation::Simulation, variable_name) = divide_calculate(
-  get_variable!(simulation, variable_name), simulation.period)
+divide_calculate(simulation::Simulation, variable_name) = divide_calculate(simulation, variable_name, simulation.period)
 
 
 get_entity(simulation::Simulation, definition::EntityDefinition) = simulation.entity_by_name[definition.name]
@@ -123,10 +168,18 @@ function stringify_variables_name_at_period(simulation::Simulation, variables_na
 end
 
 
-sum_calculate(simulation::Simulation, variable_name, period) = sum_calculate(get_variable!(simulation, variable_name), period)
+function sum_calculate(simulation::Simulation, variable_name, period)
+  if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
+    variable_name_at_period = NameAtPeriod(variable_name, period)
+    calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
+    if !(variable_name_at_period in calling_formula_input_variables_name_at_period)
+      push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
+    end
+  end
+  return sum_calculate(get_variable!(simulation, variable_name), period)
+end
 
-sum_calculate(simulation::Simulation, variable_name) = sum_calculate(
-  get_variable!(simulation, variable_name), simulation.period)
+sum_calculate(simulation::Simulation, variable_name) = sum_calculate(simulation, variable_name, simulation.period)
 
 
 function tax_scale_at(simulation::Simulation, path, date::Date; reference = false)
@@ -135,8 +188,8 @@ function tax_scale_at(simulation::Simulation, path, date::Date; reference = fals
 end
 
 
-variable_at(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),
-  default)
-
 variable_at(simulation::Simulation, variable_name, period, default) = variable_at(
   get_variable!(simulation, variable_name), period, default)
+
+variable_at(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),
+  default)
