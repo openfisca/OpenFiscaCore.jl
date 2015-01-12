@@ -153,7 +153,7 @@ function apply_tax_scale(tax_scale::MarginalRateScaleAtDate, array::Array; facto
   if round_base_decimals === nothing
     return a * tax_scale.rates
   end
-    return sum(round(a, round_base_decimals) * repeat(tax_scale.rates, outer = [1, length(array)]), 2)
+  return sum(round(a, round_base_decimals) * repeat(tax_scale.rates, outer = [1, length(array)]), 2)
 end
 
 apply_tax_scale(tax_scale::MarginalRateScaleAtDate, array_handle::ArrayHandle; factor = 1,
@@ -186,7 +186,7 @@ function tax_scale_at(tax_scale::AmountScale, date::Date)
     push!(thresholds, threshold)
     push!(amounts, amount)
   end
-  return AmountScaleAtDate(thresholds, amounts)  # TODO: option?
+  return AmountScaleAtDate(amounts, thresholds)  # TODO: option?
 end
 
 
@@ -224,8 +224,8 @@ function tax_scale_at(tax_scale::RateScale, date::Date)
     push!(rates, rate)
   end
   if isa(tax_scale, LinearAverageRateScale)
-    return LinearAverageRateScaleAtDate(thresholds, rates)  # TODO: option?, unit?
+    return LinearAverageRateScaleAtDate(rates, thresholds)  # TODO: option?, unit?
   end
   tax_scale::MarginalRateScale
-  return MarginalRateScaleAtDate(thresholds, rates)  # TODO: option?
+  return MarginalRateScaleAtDate(rates, thresholds)  # TODO: option?
 end
