@@ -41,6 +41,9 @@
 -(left::Union(Array, Date, Number), right::ArrayHandle) = left - get_array(right)
 
 
+-(array_handle::ArrayHandle) = -get_array(array_handle)
+
+
 .<(left::ArrayHandle, right::ArrayHandle) = get_array(left) .< get_array(right)
 
 .<(left::ArrayHandle, right::Union(Array, BitArray, Number)) = get_array(left) .< right
