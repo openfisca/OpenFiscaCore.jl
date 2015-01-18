@@ -60,11 +60,7 @@ immutable Parameter{T}
 end
 
 
-parameter_at(parameter::Parameter, date::Date) = value_at(parameter.value, date,
-  check_start_date = parameter.check_start_date, check_stop_date = parameter.check_stop_date)
-
-
-function value_at{T}(date_range_values::Array{DateRangeValue{T}}, date::Date; check_start_date = nothing,
+function legislation_at{T}(date_range_values::Array{DateRangeValue{T}}, date::Date; check_start_date = nothing,
     check_stop_date = nothing)
   max_stop_date = nothing
   max_value = nothing
@@ -98,3 +94,7 @@ function value_at{T}(date_range_values::Array{DateRangeValue{T}}, date::Date; ch
   end
   return nothing
 end
+
+
+legislation_at(parameter::Parameter, date::Date) = legislation_at(parameter.value, date,
+  check_start_date = parameter.check_start_date, check_stop_date = parameter.check_stop_date)

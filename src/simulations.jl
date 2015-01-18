@@ -134,12 +134,6 @@ legislation_at(simulation::Simulation, date::Date; reference = false) = (referen
 )
 
 
-function parameter_at(simulation::Simulation, path, date::Date; reference = false)
-  legislation_at_date = legislation_at(simulation, date, reference = reference)
-  return parameter_at(legislation_at_date, path)
-end
-
-
 function print(io::IO, simulation::Simulation, indent = 0)
   print(io, "Simulation(tax_benefit_system, $(simulation.period))", indent)
 end
@@ -180,12 +174,6 @@ function sum_calculate(simulation::Simulation, variable_name, period)
 end
 
 sum_calculate(simulation::Simulation, variable_name) = sum_calculate(simulation, variable_name, simulation.period)
-
-
-function tax_scale_at(simulation::Simulation, path, date::Date; reference = false)
-  legislation_at_date = legislation_at(simulation, date, reference = reference)
-  return tax_scale_at(legislation_at_date, path)
-end
 
 
 variable_at(simulation::Simulation, variable_name, period, default) = variable_at(

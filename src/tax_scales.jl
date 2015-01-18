@@ -161,14 +161,14 @@ apply_tax_scale(tax_scale::MarginalRateScaleAtDate, array_handle::ArrayHandle; f
         round_base_decimals = round_base_decimals)
 
 
-function tax_scale_at(tax_scale::AmountScale, date::Date)
+function legislation_at(tax_scale::AmountScale, date::Date)
   thresholds = DateRangeValue{Float32}[]
   amounts = DateRangeValue{Float32}[]
   for bracket in tax_scale.brackets
     if bracket.threshold === nothing
       continue
     end
-    threshold = value_at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
+    threshold = legislation_at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if threshold === nothing
       continue
@@ -177,7 +177,7 @@ function tax_scale_at(tax_scale::AmountScale, date::Date)
     if bracket.amount === nothing
       continue
     end
-    amount = value_at(bracket.amount, date, check_start_date = tax_scale.check_start_date,
+    amount = legislation_at(bracket.amount, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if amount === nothing
       continue
@@ -190,14 +190,14 @@ function tax_scale_at(tax_scale::AmountScale, date::Date)
 end
 
 
-function tax_scale_at(tax_scale::RateScale, date::Date)
+function legislation_at(tax_scale::RateScale, date::Date)
   thresholds = Float32[]
   rates = Float32[]
   for bracket in tax_scale.brackets
     if bracket.threshold === nothing
       continue
     end
-    threshold = value_at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
+    threshold = legislation_at(bracket.threshold, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if threshold === nothing
       continue
@@ -206,14 +206,14 @@ function tax_scale_at(tax_scale::RateScale, date::Date)
     if bracket.rate === nothing
       continue
     end
-    rate = value_at(bracket.rate, date, check_start_date = tax_scale.check_start_date,
+    rate = legislation_at(bracket.rate, date, check_start_date = tax_scale.check_start_date,
       check_stop_date = tax_scale.check_stop_date)
     if rate === nothing
       continue
     end
 
     if bracket.base !== nothing
-      base = value_at(bracket.base, date, check_start_date = tax_scale.check_start_date,
+      base = legislation_at(bracket.base, date, check_start_date = tax_scale.check_start_date,
         check_stop_date = tax_scale.check_stop_date)
       if base !== nothing
         rate *= base

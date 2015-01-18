@@ -38,53 +38,6 @@ end
 
 
 legislation_at(legislation::Legislation, date::Date) = Legislation([
-  name => (isa(child, Legislation) ? legislation_at : isa(child, Parameter) ? parameter_at : tax_scale_at)(child, date)
+  name => legislation_at(child, date)
   for (name, child) in legislation
 ])
-
-function legislation_at(legislation::Legislation, path)
-  if path === nothing || isempty(path)
-    return legislation
-  end
-  split_path = split(path, '.', 2, false)
-  if isempty(split_path)
-    return legislation
-  end
-  child = legislation[split_path[1]]
-  if length(split_path) == 1
-    return child
-  end
-  return legislation_at(child, split_path[2])
-end
-
-
-function parameter_at(legislation::Legislation, path)
-  if path === nothing || isempty(path)
-    return legislation
-  end
-  split_path = split(path, '.', 2, false)
-  if isempty(split_path)
-    return legislation
-  end
-  child = legislation[split_path[1]]
-  if length(split_path) == 1
-    return child
-  end
-  return parameter_at(child, split_path[2])
-end
-
-
-function tax_scale_at(legislation::Legislation, path)
-  if path === nothing || isempty(path)
-    return legislation
-  end
-  split_path = split(path, '.', 2, false)
-  if isempty(split_path)
-    return legislation
-  end
-  child = legislation[split_path[1]]
-  if length(split_path) == 1
-    return child
-  end
-  return tax_scale_at(child, split_path[2])
-end

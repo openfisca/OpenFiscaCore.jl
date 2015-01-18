@@ -168,4 +168,7 @@ min(left::Union(Array, Date, Number), right::ArrayHandle) = min(left, get_array(
 next(array_handle::ArrayHandle, state) = next(get_array(array_handle), state)
 
 
+round(array_handle::ArrayHandle, digits::Integer = 0, base::Integer = 10) = round(get_array(array_handle), digits, base)
+
+
 start(array_handle::ArrayHandle) = start(get_array(array_handle))
