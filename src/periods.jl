@@ -54,6 +54,11 @@ YearPeriod(start::Integer, length) = YearPeriod(Date(start), length)
 YearPeriod(start) = YearPeriod(start, 1)
 
 
++(period::DatePeriod, offset) = typeof(period)(period.start + offset, period.length)
+
+-(period::DatePeriod, offset) = typeof(period)(period.start - offset, period.length)
+
+
 days(period::DatePeriod) = period.start - stop_date(period) + 1
 
 
