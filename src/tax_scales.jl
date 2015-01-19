@@ -157,8 +157,8 @@ function apply_tax_scale(tax_scale::MarginalRateScaleAtDate, array::Array; facto
 end
 
 apply_tax_scale(tax_scale::MarginalRateScaleAtDate, array_handle::ArrayHandle; factor = 1,
-    round_base_decimals = nothing) = apply_tax_scale(tax_scale, get_array(array_handle); factor = factor,
-        round_base_decimals = round_base_decimals)
+  round_base_decimals = nothing) = apply_tax_scale(tax_scale, get_array(array_handle); factor = factor,
+  round_base_decimals = round_base_decimals)
 
 
 function legislation_at(tax_scale::AmountScale, date::Date)
