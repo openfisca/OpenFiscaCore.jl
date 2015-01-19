@@ -145,10 +145,10 @@ end
 
 function apply_tax_scale(tax_scale::MarginalRateScaleAtDate, array::Array; factor = 1, round_base_decimals = nothing)
   base = repeat(array, outer = [1, length(tax_scale.thresholds)])
-  if round_base_decimals !== nothing
-    factor = round(factor, round_base_decimals)
-  end
   thresholds = repeat(hcat(factor .* tax_scale.thresholds', Inf), outer = [length(array), 1])
+  if round_base_decimals !== nothing
+    thresholds = round(thresholds, round_base_decimals)
+  end
   a = max(min(base, thresholds[:, 2:end]) - thresholds[:, 1:end - 1], 0)
   if round_base_decimals === nothing
     return a * tax_scale.rates
