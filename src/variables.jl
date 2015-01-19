@@ -37,7 +37,8 @@ type ConcretePermanentVariable <: PermanentVariable
   array::Union(Array, BitArray)
 end
 
-ConcretePermanentVariable(simulation, definition) = ConcretePermanentVariable(simulation, definition, [])
+ConcretePermanentVariable(simulation, definition) = ConcretePermanentVariable(simulation, definition,
+  Array(definition.cell_type, 0))
 
 
 immutable ConcreteVariableAtPeriod <: VariableAtPeriod
