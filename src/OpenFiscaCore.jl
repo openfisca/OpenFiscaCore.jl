@@ -44,6 +44,7 @@ typealias ArrayHandle Union(EntityArray, PermanentVariable, VariableAtPeriod)
 typealias VariableAtPeriodOrPermanent Union(PermanentVariable, VariableAtPeriod)
 
 
+include("roles.jl")
 include("entities.jl")
 include("periods.jl")
 include("arrays.jl")

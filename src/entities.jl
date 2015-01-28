@@ -43,14 +43,6 @@ type Entity
 end
 
 
-immutable Role
-  value::Int8
-end
-
-
-ALL_ROLES = [Role(0)]
-
-
 function add_member(entity; args...)
   entity_definition = entity.definition
   entity.count += 1
