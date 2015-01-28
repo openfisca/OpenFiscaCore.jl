@@ -70,6 +70,127 @@ first_day(period::MonthPeriod) = MonthPeriod(firstdayofmonth(period.start), peri
 first_day(period::YearPeriod) = YearPeriod(firstdayofyear(period.start), period.length)
 
 
+function input_to_period_tuple(convertible::Convertible)
+  """Convert an input string to a period tuple.
+
+  .. note:: This function doesn't return a period, but a tuple that allows to construct a period.
+  """
+  if convertible.error !== nothing || convertible.value === nothing
+    return convertible
+  end
+  split_value = filter(fragment -> !isempty(fragment), [
+    strip(fragment)
+    for fragment in split(convertible.value, ':', false)
+  ])
+  if isempty(split_value)
+    return Convertible(nothing, convertible.context)
+  end
+  if length(split_value) == 1
+    split_value = filter(fragment -> !isempty(fragment), [
+      strip(fragment)
+      for fragment in split(split_value[1], '-', false)
+    ])
+    if length(split_value) == 1
+      return pipe(
+        input_to_int,
+        test_greater_or_equal(0),
+        call(year -> ("year", year)),
+      )(Convertible(split_value[1], convertible.context))
+    elseif length(split_value) == 2
+      return pipe(
+        struct(
+          (
+            pipe(
+              input_to_int,
+              test_greater_or_equal(0),
+            ),
+            pipe(
+              input_to_int,
+              test_between(1, 12),
+            ),
+          ),
+        ),
+        call(month_tuple -> ("month", month_tuple)),
+      )(Convertible(split_value, convertible.context))
+    elseif length(split_value) == 3
+      return pipe(
+        struct(
+          (
+            pipe(
+              input_to_int,
+              test_greater_or_equal(0),
+            ),
+            pipe(
+              input_to_int,
+              test_between(1, 12),
+            ),
+            pipe(
+              input_to_int,
+              test_between(1, 31),
+            ),
+          ),
+        ),
+        call(day_tuple -> ("day", day_tuple)),
+      )(Convertible(split_value, convertible.context))
+    end
+    return Convertible(split_value, convertible.context,
+      """Date string contains too much "-" for a year, a month or a day.""")
+  elseif length(split_value) == 2
+    split_start = filter(fragment -> !isempty(fragment), [
+      strip(fragment)
+      for fragment in split(split_value[1], '-', false)
+    ])
+    size, error = Convertible(split_value[2], convertible.context) |> input_to_int |> to_value_error
+    if error === nothing
+      if length(split_start) == 1
+        start, error = Convertible(split_start[1], convertible.context) |> input_to_int |>
+          test_greater_or_equal(0) |> to_value_error
+        if error === nothing
+          return Convertible(("year", start, size), convertible.context)
+        end
+      elseif length(split_start) == 2
+        start, error = Convertible(split_start, convertible.context) |> struct(
+          (
+            pipe(
+              input_to_int,
+              test_greater_or_equal(0),
+            ),
+            pipe(
+              input_to_int,
+              test_between(1, 12),
+            ),
+          ),
+        ) |> to_value_error
+        if error === nothing
+          return Convertible(("month", start, size), convertible.context)
+        end
+      elseif length(split_start) == 3
+        start, error = Convertible(split_start, convertible.context) |> struct(
+          (
+            pipe(
+              input_to_int,
+              test_greater_or_equal(0),
+            ),
+            pipe(
+              input_to_int,
+              test_between(1, 12),
+            ),
+            pipe(
+              input_to_int,
+              test_between(1, 31),
+            ),
+          ),
+        ) |> to_value_error
+        if error === nothing
+          return Convertible(("day", start, size), convertible.context)
+        end
+      end
+    end
+  end
+  return Convertible(tuple(split_value...), convertible.context)
+end
+
+
 function intersection(period::DatePeriod, start::Date, stop::Date)
   period_start = period.start
   period_stop = stop_date(period)
@@ -94,6 +215,48 @@ end
 
 
 isfinite(::Period) = true
+
+
+period(unit::String, start::(Int...), size = nothing) = period(unit, Date(start...), size)
+
+period(unit::String, start::Array{Int}, size = nothing) = period(unit, Date(start...), size)
+
+function period(unit::String, start::Date, size = nothing)
+  @assert(unit in ("day", "month", "year"))
+  if size === nothing
+    year, month, day = yearmonthday(start)
+    if day == 1
+      if month == 1
+        size = unit == "day" ? daysinyear(year) : unit == "month" ? 12 : 1
+      else
+        size = unit == "day" ? daysinmonth(start) : 1
+      end
+    else
+      size = 1
+    end
+  end
+  @assert(size >= 1)
+  return unit_constructor(unit)(start, size)
+end
+
+period(unit::String, start::Int, size = nothing) = period(unit, Date(start), size)
+
+period(unit::String, start::DatePeriod, size = nothing) = period(unit, start.start, size)
+
+period(unit::String, start::String, size = nothing) = period(
+  unit,
+  Date([
+    int(fragment)
+    for fragment in split(start, "-", 3)
+  ]...),
+  size,
+)
+
+period(value::DatePeriod) = value
+
+period(value::Int) = YearPeriod(value)
+
+period(value) = Convertible(value) |> to_period |> to_value
 
 
 function print(io::IO, period::DayPeriod)
@@ -127,6 +290,85 @@ stop_date(period::DayPeriod) = period.start + Day(period.length - 1)
 stop_date(period::MonthPeriod) = period.start + Month(period.length) - Day(1)
 
 stop_date(period::YearPeriod) = period.start + Year(period.length) - Day(1)
+
+
+"""Return a converter that creates a period from a Julia or JSON  object."""
+to_period(convertible::Convertible; max_date = Date(2099, 12, 31), min_date = Date(1870, 1, 1)) = pipe(
+  condition(
+    test_isa(String),
+    input_to_period_tuple,
+    condition(
+      test_isa(Int),
+      pipe(
+        test_greater_or_equal(0),
+        call(year -> ("year", year)),
+      ),
+    ),
+  ),
+  condition(
+    test_isa(Dict),
+    pipe(
+      struct(
+        [
+          "size" => pipe(
+            test_isa(Union(Int, String)),
+            to_int,
+            test_greater_or_equal(1),
+          ),
+          "start" => pipe(
+            to_date,
+            test_between(min_date, max_date),
+            require,
+          ),
+          "unit" => pipe(
+            test_isa(String),
+            test_in(["day", "month", "year"]),
+            require,
+          ),
+        ],
+      ),
+      call(value -> period(value["unit"], value["start"], value["size"])),
+    ),
+    pipe(
+      test_isa(Union(Array, Tuple)),
+      test(period_tuple -> 2 <= length(period_tuple) <= 3, error = N_("Invalid period tuple.")),
+      call(period_tuple -> tuple(union(period_tuple, [nothing])[1:3]...)),
+      struct(
+        (
+          # unit
+          pipe(
+            test_isa(String),
+            test_in(["day", "month", "year"]),
+            require,
+          ),
+          # start
+          pipe(
+            to_date,
+            test_between(min_date, max_date),
+            require,
+          ),
+          # size
+          pipe(
+            test_isa(Union(Int, String)),
+            to_int,
+            test_greater_or_equal(1),
+          ),
+        ),
+      ),
+      call(value -> period(value...)),
+    ),
+  ),
+)(convertible)
+
+to_period(; max_date = Date(2099, 12, 31), min_date = Date(1870, 1, 1)) = convertible::Convertible -> to_period(
+  convertible, max_date = max_date, min_date = min_date)
+
+
+unit_constructor(unit::String) = [
+  "day" => DayPeriod,
+  "month" => MonthPeriod,
+  "year" => YearPeriod,
+][unit]
 
 
 unit_type(period::DayPeriod) = Day

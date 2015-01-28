@@ -34,3 +34,29 @@
 @test MonthPeriod(firstdayofyear(DayPeriod(Date(2014, 11, 29), 1).start)) == MonthPeriod(Date(2014, 1, 1), 1)
 @test YearPeriod(firstdayofmonth(DayPeriod(Date(2014, 11, 29), 1).start)) == YearPeriod(Date(2014, 11, 1), 1)
 @test YearPeriod(firstdayofyear(DayPeriod(Date(2014, 11, 29), 1).start)) == YearPeriod(Date(2014, 1, 1), 1)
+
+@test period(2014) == YearPeriod(2014)
+@test period("2014") == YearPeriod(2014)
+
+@test Convertible("2014") |> to_period |> to_value == YearPeriod(2014)
+@test Convertible("2014:2") |> to_period |> to_value == YearPeriod(2014, 2)
+@test Convertible("2014-2") |> to_period |> to_value == MonthPeriod(Date(2014, 2, 1))
+@test Convertible("2014-2:2") |> to_period |> to_value == MonthPeriod(Date(2014, 2, 1), 2)
+@test Convertible("2014-2-3") |> to_period |> to_value == DayPeriod(Date(2014, 2, 3))
+@test Convertible("2014-2-3:2") |> to_period |> to_value == DayPeriod(Date(2014, 2, 3), 2)
+
+@test Convertible("year:2014") |> to_period |> to_value == YearPeriod(2014)
+@test Convertible("month:2014") |> to_period |> to_value == MonthPeriod(2014, 12)
+@test Convertible("day:2014") |> to_period |> to_value == DayPeriod(2014, 365)
+
+@test Convertible("year:2014-2") |> to_period |> to_value == YearPeriod(Date(2014, 2, 1))
+@test Convertible("month:2014-2") |> to_period |> to_value == MonthPeriod(Date(2014, 2, 1))
+@test Convertible("day:2014-2") |> to_period |> to_value == DayPeriod(Date(2014, 2, 1), 28)
+
+@test Convertible("year:2014-2-3") |> to_period |> to_value == YearPeriod(Date(2014, 2, 3))
+@test Convertible("month:2014-2-3") |> to_period |> to_value == MonthPeriod(Date(2014, 2, 3))
+@test Convertible("day:2014-2-3") |> to_period |> to_value == DayPeriod(Date(2014, 2, 3))
+
+@test Convertible("year:2014-2-3:2") |> to_period |> to_value == YearPeriod(Date(2014, 2, 3), 2)
+@test Convertible("month:2014-2-3:2") |> to_period |> to_value == MonthPeriod(Date(2014, 2, 3), 2)
+@test Convertible("day:2014-2-3:2") |> to_period |> to_value == DayPeriod(Date(2014, 2, 3), 2)
