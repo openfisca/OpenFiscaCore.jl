@@ -297,15 +297,15 @@ to_period(convertible::Convertible; max_date = Date(2099, 12, 31), min_date = Da
   condition(
     test_isa(String),
     input_to_period_tuple,
-    condition(
-      test_isa(Int),
-      pipe(
-        test_greater_or_equal(0),
-        call(year -> ("year", year)),
-      ),
+    test_isa(Int),
+    pipe(
+      test_greater_or_equal(0),
+      call(year -> ("year", year)),
     ),
   ),
   condition(
+    test_isa(DatePeriod),
+    noop,
     test_isa(Dict),
     pipe(
       struct(

@@ -38,6 +38,7 @@
 @test period(2014) == YearPeriod(2014)
 @test period("2014") == YearPeriod(2014)
 
+@test Convertible(2014) |> to_period |> to_value == YearPeriod(2014)
 @test Convertible("2014") |> to_period |> to_value == YearPeriod(2014)
 @test Convertible("2014:2") |> to_period |> to_value == YearPeriod(2014, 2)
 @test Convertible("2014-2") |> to_period |> to_value == MonthPeriod(Date(2014, 2, 1))

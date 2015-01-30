@@ -23,7 +23,7 @@
 module OpenFiscaCore
 
 
-export *, +, -, .<, .<=, .==, .!=, .*, .+, .-, ./, &, |, !, @calculate, @divide_calculate, @sum_calculate, @variable_at, add_member, add_to_legislation, AmountBracket, AmountScale, AmountScaleAtDate, any_person_in_entity, apply_tax_scale, ArrayHandle, assert_near, at, beginswith, calculate, cleanup_period_item, convert, DatePeriod, DateRangeValue, DayPeriod, days, default_array, div, divide_calculate, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, first_day, get_array, get_entity, get_variable!, input_to_period_tuple, intersection, isfinite, isless, Legislation, legislation_at, length, LinearAverageRateScale, LinearAverageRateScaleAtDate, MarginalRateScale, MarginalRateScaleAtDate, max, min, MonthPeriod, next, Parameter, period, PeriodicVariable, PermanentVariable, print, RateBracket, RateScale, RateScaleAtDate, real, Role, round, Scenario, set_array, Simulation, single_person_in_entity, split_person_by_role, start, stop_date, sum_calculate, sum_person_in_entity, TaxBenefitSystem, TaxScale, TaxScaleAtDate, to_axes, to_period, unit_type, UnitIntervalFloat32, variable_at, VariableAtPeriod, VariableAtPeriodOrPermanent, VariableDefinition, YearPeriod, zeros
+export *, +, -, .<, .<=, .==, .!=, .*, .+, .-, ./, &, |, !, @calculate, @divide_calculate, @sum_calculate, @variable_at, add_member, add_to_legislation, AmountBracket, AmountScale, AmountScaleAtDate, any_person_in_entity, apply_tax_scale, ArrayHandle, assert_near, at, beginswith, calculate, cleanup_period_item, convert, DatePeriod, DateRangeValue, DayPeriod, days, default_array, div, divide_calculate, empty_period, Entity, entity_to_person, EntityArray, EntityDefinition, first_day, get_array, get_entity, get_variable!, input_to_period_tuple, intersection, isfinite, isless, json_to_cell, Legislation, legislation_at, length, LinearAverageRateScale, LinearAverageRateScaleAtDate, MarginalRateScale, MarginalRateScaleAtDate, max, min, MonthPeriod, next, Parameter, period, PeriodicVariable, PermanentVariable, print, RateBracket, RateScale, RateScaleAtDate, real, Role, round, Scenario, set_array, Simulation, single_person_in_entity, split_person_by_role, start, stop_date, sum_calculate, sum_person_in_entity, TaxBenefitSystem, TaxScale, TaxScaleAtDate, to_axes, to_period, to_scenario, unit_type, UnitIntervalFloat32, variable_at, VariableAtPeriod, VariableAtPeriodOrPermanent, VariableDefinition, YearPeriod, zeros
 
 
 import Base: *, +, -, .<, .<=, .==, .!=, .*, .+, .-, ./, &, |, !, beginswith, convert, div, done, isfinite, isless, length, max, min, next, print, real, round, start, zeros
@@ -56,6 +56,7 @@ include("variable_definitions.jl")
 include("tax_scales.jl")
 include("legislations.jl")
 include("tax_benefit_systems.jl")
+include("scenarios.jl")
 include("simulations.jl")
 include("variables.jl")
 
