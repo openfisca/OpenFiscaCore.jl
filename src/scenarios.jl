@@ -54,7 +54,7 @@ end
 
 
 function print(io::IO, scenario::Scenario, indent = 0)
-  print(io, "Scenario(tax_benefit_system, $(scenario.period), , $(scenario.test_case), $(scenario.axes))", indent)
+  print(io, "Scenario(tax_benefit_system, $(scenario.period), $(scenario.test_case), $(scenario.axes))", indent)
 end
 
 
