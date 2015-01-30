@@ -53,6 +53,11 @@ function cleanup_period_item(convertible::Convertible)
 end
 
 
+function print(io::IO, scenario::Scenario, indent = 0)
+  print(io, "Scenario(tax_benefit_system, $(scenario.period), , $(scenario.test_case), $(scenario.axes))", indent)
+end
+
+
 function to_axes(tax_benefit_system::TaxBenefitSystem)
   variable_definition_by_name = tax_benefit_system.variable_definition_by_name
   return pipe(
