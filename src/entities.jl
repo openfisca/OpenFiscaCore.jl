@@ -22,13 +22,14 @@
 
 type EntityDefinition
   name::String
+  name_plural::String
   index_variable_name::String  # Not used for persons
   role_variable_name::String  # Not used for persons
   is_person::Bool
   # key_plural::String
 
-  EntityDefinition(name; index_variable_name = "", role_variable_name = "", is_person = false) = new(name,
-    index_variable_name, role_variable_name, is_person)
+  EntityDefinition(name, name_plural; index_variable_name = "", role_variable_name = "", is_person = false) = new(name,
+    name_plural, index_variable_name, role_variable_name, is_person)
 end
 
 

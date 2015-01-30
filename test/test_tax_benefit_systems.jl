@@ -20,8 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-famille = EntityDefinition("famille", index_variable_name = "id_famille", role_variable_name ="role_dans_famille")
-individu = EntityDefinition("individu", is_person = true)
+famille = EntityDefinition("famille", "familles", index_variable_name = "id_famille",
+  role_variable_name ="role_dans_famille")
+individu = EntityDefinition("individu", "individus", is_person = true)
 
 PARENT1 = Role(1)
 PARENT2 = Role(2)
