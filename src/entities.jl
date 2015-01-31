@@ -66,7 +66,7 @@ function add_member(entity; args...)
   end
 
   # When entity is a person, ensure that the index & role of the person in the other entities are set.
-  value_by_name = Dict{String, Any}([string(symbol) => value for (symbol, value) in args])
+  value_by_name = (String => Any)[string(symbol) => value for (symbol, value) in args]
   if entity_definition.is_person
     for other_entity in values(simulation.entity_by_name)
       other_entity_definition = other_entity.definition
