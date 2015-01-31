@@ -58,6 +58,19 @@ function print(io::IO, scenario::Scenario, indent = 0)
 end
 
 
+function steps_count(scenario::Scenario)
+  steps_count = 1
+  if scenario.axes !== nothing:
+    for parallel_axes in scenario.axes
+      # All parallel axes have the same count, entity and period.
+      axis = parallel_axes[0]
+      steps_count *= axis["count"]
+    end
+  end
+  return steps_count
+end
+
+
 function to_axes(tax_benefit_system::TaxBenefitSystem)
   variable_definition_by_name = tax_benefit_system.variable_definition_by_name
   return pipe(
