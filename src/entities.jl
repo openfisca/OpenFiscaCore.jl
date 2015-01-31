@@ -38,16 +38,14 @@ type Entity
   definition::EntityDefinition
   count::Unsigned
   roles_count::Unsigned  # Not used for persons
-  step_size::Unsigned
 
-  Entity(simulation::AbstractSimulation, definition::EntityDefinition) = new(simulation, definition, 0, 0, 0)
+  Entity(simulation::AbstractSimulation, definition::EntityDefinition) = new(simulation, definition, 0, 0)
 end
 
 
 function add_member(entity; args...)
   entity_definition = entity.definition
   entity.count += 1
-  entity.step_size += 1
   member_index = entity.count
   simulation = entity.simulation
 

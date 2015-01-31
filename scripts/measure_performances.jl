@@ -146,10 +146,8 @@ function check_revenu_disponible(year, depcom, expected_revenu_disponible)
   famille = get_entity(simulation, "famille")
   famille.count = 3
   famille.roles_count = 2
-  famille.step_size = 1
   individu = get_entity(simulation, "individu")
   individu.count = 6
-  individu.step_size = 2
   set_array(simulation, "depcom", [depcom, depcom, depcom])
   set_array(simulation, "id_famille", [1, 1, 2, 2, 3, 3])
   set_array(simulation, "role_dans_famille", [PARENT1, PARENT2, PARENT1, PARENT2, PARENT1, PARENT2])
