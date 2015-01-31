@@ -26,16 +26,18 @@ type TaxBenefitSystem
   legislation::Legislation
   person_name::String  # Name of person entity
   reference  # Reference tax-benefit system. Used only by reforms. Note: Reforms can be chained.
+  to_test_case  # Optional function that validates a JSON test case (inside a scenario).
   variable_definition_by_name::Dict{String, VariableDefinition}
 
   TaxBenefitSystem(entity_definition_by_name::Dict{String, EntityDefinition}, legislation::Legislation,
-    variable_definition_by_name::Dict{String, VariableDefinition}; reference = nothing
+    variable_definition_by_name::Dict{String, VariableDefinition}; reference = nothing, to_test_case = nothing
   ) = new(
     entity_definition_by_name,
     WeakKeyDict{Date, Legislation}(),
     legislation,
     get_person_name(entity_definition_by_name),
     reference,
+    to_test_case,
     variable_definition_by_name,
   )
 end

@@ -59,15 +59,15 @@ end
 
 
 function steps_count(scenario::Scenario)
-  steps_count = 1
-  if scenario.axes !== nothing:
+  count = 1
+  if scenario.axes !== nothing
     for parallel_axes in scenario.axes
       # All parallel axes have the same count, entity and period.
-      axis = parallel_axes[0]
-      steps_count *= axis["count"]
+      axis = parallel_axes[1]
+      count *= axis["count"]
     end
   end
-  return steps_count
+  return count
 end
 
 
@@ -121,7 +121,7 @@ function to_axes(tax_benefit_system::TaxBenefitSystem)
 end
 
 
-function to_scenario(tax_benefit_system::TaxBenefitSystem, to_test_case::Function; repair = false)
+function to_scenario(tax_benefit_system::TaxBenefitSystem; repair = false)
   variable_definition_by_name = tax_benefit_system.variable_definition_by_name
 
   return convertible::Convertible -> begin
@@ -155,7 +155,7 @@ function to_scenario(tax_benefit_system::TaxBenefitSystem, to_test_case::Functio
     data = converted.value
     converted = struct(
       [
-        "test_case" => to_test_case(tax_benefit_system, data["period"], repair = repair),
+        "test_case" => tax_benefit_system.to_test_case(tax_benefit_system, data["period"], repair = repair),
       ],
       default = noop,
     )(converted)

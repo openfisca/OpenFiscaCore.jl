@@ -23,13 +23,15 @@
 type EntityDefinition
   name::String
   name_plural::String
+  each_person_id_and_role # Optional function that returns an iterator of each ID & role of a JSON member.
+     # Not used for persons
   index_variable_name::String  # Not used for persons
-  role_variable_name::String  # Not used for persons
   is_person::Bool
-  # key_plural::String
+  role_variable_name::String  # Not used for persons
 
-  EntityDefinition(name, name_plural; index_variable_name = "", role_variable_name = "", is_person = false) = new(name,
-    name_plural, index_variable_name, role_variable_name, is_person)
+  EntityDefinition(name, name_plural; each_person_id_and_role = nothing, is_person = false, index_variable_name = "",
+    role_variable_name = ""
+  ) = new(name, name_plural, each_person_id_and_role, index_variable_name, is_person, role_variable_name)
 end
 
 

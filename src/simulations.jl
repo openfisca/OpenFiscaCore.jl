@@ -56,7 +56,8 @@ type Simulation <: AbstractSimulation
   trace::Bool
   variable_by_name::Dict{String, Variable}
 
-  function Simulation(tax_benefit_system, period, variable_by_name; debug = false, debug_all = false, trace = false)
+  function Simulation(tax_benefit_system::TaxBenefitSystem, period::DatePeriod, variable_by_name; debug = false,
+      debug_all = false, trace = false)
     if !debug && debug_all
       debug = true
     end
@@ -70,8 +71,21 @@ type Simulation <: AbstractSimulation
   end
 end
 
-Simulation(tax_benefit_system, period; debug = false, debug_all = false, trace = false) = Simulation(tax_benefit_system,
-  period, Dict{String, Variable}(), debug = debug, debug_all = debug_all, trace = trace)
+function Simulation(scenario::Scenario; debug = false, debug_all = false, trace = false)
+  simulation = Simulation(
+    scenario.tax_benefit_system,
+    scenario.period,
+    debug = debug,
+    debug_all = debug_all,
+    trace = trace,
+  )
+  fill!(simulation, scenario)
+  return simulation
+end
+
+Simulation(tax_benefit_system::TaxBenefitSystem, period::DatePeriod; debug = false, debug_all = false, trace = false
+  ) = Simulation(tax_benefit_system, period, Dict{String, Variable}(), debug = debug, debug_all = debug_all,
+  trace = trace)
 
 
 function calculate(simulation::Simulation, variable_name, period)
@@ -100,6 +114,145 @@ function divide_calculate(simulation::Simulation, variable_name, period)
 end
 
 divide_calculate(simulation::Simulation, variable_name) = divide_calculate(simulation, variable_name, simulation.period)
+
+
+function fill!(simulation::Simulation, scenario::Scenario)
+  variable_definition_by_name = simulation.tax_benefit_system.variable_definition_by_name
+  person = get_person(simulation)
+  person_plural = person.definition.name_plural
+  test_case = scenario.test_case
+
+  scenario_steps_count = steps_count(scenario)
+  for entity in values(simulation.entity_by_name)
+    entity.count = scenario_steps_count * length(test_case[entity.definition.name_plural])
+  end
+
+  person_index_by_id = [
+    person_id => person_index
+    for (person_index, person_id) in enumerate(keys(test_case[person_plural]))
+  ]
+
+  for entity in values(simulation.entity_by_name)
+    if entity === person
+      continue
+    end
+
+    entity_plural = entity.definition.name_plural
+    index_variable = get_index_variable(entity)
+    index_array = get_array!(index_variable, simulation.period) do
+      return Array(index_variable.definition.cell_type, person.count)
+    end
+    role_variable = get_role_variable(entity)
+    role_array = get_array!(role_variable, simulation.period) do
+      return Array(role_variable.definition.cell_type, person.count)
+    end
+    for (member_index, member) in enumerate(values(test_case[entity_plural]))
+      for (person_id, person_role) in entity.definition.each_person_id_and_role(member)
+        person_index = person_index_by_id[person_id]
+        for step_index in 1:scenario_steps_count
+          absolute_person_index = (step_index - 1) * length(test_case[person_plural]) + person_index
+          index_array[absolute_person_index] = (step_index - 1) * length(test_case[entity_plural]) + member_index
+          role_array[absolute_person_index] = person_role
+        end
+      end
+    end
+    entity.roles_count = maximum(role_array)
+  end
+
+  for entity in values(simulation.entity_by_name)
+    entity_plural = entity.definition.name_plural
+    allowed_variables_name = Set(union([
+      keys(filter(member) do key, value
+        return value !== nothing && !(key in (entity.definition.index_variable_name,
+          entity.definition.role_variable_name))
+      end)
+      for member in values(test_case[entity_plural])
+    ]...))
+    for (variable_name, variable_definition) in variable_definition_by_name
+      if variable_definition.entity_definition !== entity.definition || !(variable_name in allowed_variables_name)
+        continue
+      end
+
+      variable_periods = Set{DatePeriod}()
+      for member in values(test_case[entity_plural])
+        cell = get(member, variable_name, nothing)
+        if isa(cell, Dict)
+          if any(value -> value !== nothing, values(cell))
+            union!(variable_periods, keys(cell))
+          end
+        elseif cell !== nothing
+          push!(variable_periods, simulation.period)
+        end
+      end
+
+      variable = get_variable!(entity, variable_name)
+      for variable_period in variable_periods
+        variable_values = map(values(test_case[entity_plural])) do member
+          cell = get(member, variable_name, nothing)
+          return isa(cell, Dict) ?
+            get(cell, variable_period, variable_definition.cell_default) :
+            variable_period == simulation.period ? cell : variable_definition.cell_default
+        end
+        set_array(variable, variable_period, repeat(variable_values, outer = [scenario_steps_count]))
+      end
+    end
+  end
+
+  if scenario.axes !== nothing
+    if length(scenario.axes) == 1
+      parallel_axes = scenario.axes[1]
+      # All parallel axes have the same count, entity and period.
+      first_axis = parallel_axes[1]
+      axis_count = first_axis["count"]
+      axis_variable = get_variable!(simulation, first_axis["name"])
+      axis_entity = get_entity(axis_variable)
+      axis_entity_plural = axis_entity.definition.name_plural
+      axis_period = first_axis["period"] === nothing ? simulation.period : first_axis["period"]
+      for axis in parallel_axes
+        axis_variable = get_variable!(simulation, axis["name"])
+        axis_array = get_array!(axis_variable, axis_period) do
+          return default_array(axis_variable)
+        end
+        axis_array[axis["index"] + 1:length(test_case[axis_entity_plural]):end] = linspace(axis["min"], axis["max"],
+          axis_count)
+      end
+    else
+      for (parallel_axes_index, parallel_axes) in enumerate(scenario.axes)
+        # All parallel axes have the same count, entity and period.
+        first_axis = parallel_axes[1]
+        axis_count = first_axis["count"]
+
+        linspace_vector = linspace(0, axis_count - 1, axis_count)
+        linspace_array = reshape(linspace_vector, [
+          index == parallel_axes_index ? axis_count : 1
+          for index in 1:length(scenario.axes)
+        ]...)
+        ranges = [
+          index == parallel_axes_index ? [1:axis_count]: ones(Int, parallel_axes1[1]["count"])
+          for (index, parallel_axes1) in enumerate(scenario.axes)
+        ]
+        mesh_array = linspace_array[ranges...]
+        mesh_vector = reshape(linspace_vector, [
+          index == parallel_axes_index ? scenario_steps_count : 1
+          for index in 1:length(scenario.axes)
+        ]...)
+
+        axis_variable = get_variable!(simulation, first_axis["name"])
+        axis_entity = get_entity(axis_variable)
+        axis_entity_plural = axis_entity.definition.name_plural
+        axis_period = first_axis["period"] === nothing ? simulation.period : first_axis["period"]
+        for axis in parallel_axes
+          axis_variable = get_variable!(simulation, axis["name"])
+          axis_array = get_array!(axis_variable, axis_period) do
+            return default_array(axis_variable)
+          end
+          axis_array[axis["index"] + 1:length(test_case[axis_entity_plural]):end] = axis["min"] +
+            mesh_vector * (axis["max"] - axis["min"]) / (axis_count - 1)
+        end
+      end
+    end
+  end
+end
 
 
 get_entity(simulation::Simulation, definition::EntityDefinition) = simulation.entity_by_name[definition.name]
