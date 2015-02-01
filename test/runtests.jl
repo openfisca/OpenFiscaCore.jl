@@ -22,10 +22,11 @@
 
 using Base.Test
 
-using Converters
-using Dates
+importall Converters
+importall Converters.DatesConverters
+import Dates: Date, firstdayofmonth, firstdayofyear, Month, Year
 
-using OpenFiscaCore
+importall OpenFiscaCore
 
 
 include("test_periods.jl")
