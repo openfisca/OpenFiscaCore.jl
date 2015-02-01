@@ -332,7 +332,7 @@ to_period(convertible::Convertible; max_date = Date(2099, 12, 31), min_date = Da
     pipe(
       test_isa(Union(Array, Tuple)),
       test(period_tuple -> 2 <= length(period_tuple) <= 3, error = N_("Invalid period tuple.")),
-      call(period_tuple -> tuple(union(period_tuple, [nothing])[1:3]...)),
+      call(period_tuple -> tuple(vcat(collect(period_tuple), [nothing])[1:3]...)),
       struct(
         (
           # unit

@@ -161,7 +161,7 @@ function fill!(simulation::Simulation, scenario::Scenario)
 
   for entity in values(simulation.entity_by_name)
     entity_plural = entity.definition.name_plural
-    allowed_variables_name = Set(union([
+    allowed_variables_name = Set(vcat([
       keys(filter(member) do key, value
         return value !== nothing && !(key in (entity.definition.index_variable_name,
           entity.definition.role_variable_name))
