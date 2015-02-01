@@ -20,9 +20,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-const year_or_month_or_day_re = r"(18|19|20)\d{2}(-(0[1-9]|1[0-2])(-([0-2]\d|3[0-1]))?)?$"
-
-
 type VariableDefinition
   formula::Function
   name::String
@@ -90,8 +87,6 @@ function json_at_date_to_cell(cell_type::Type{Date})
       ),
       pipe(
         test_isa(String),
-        test(value -> ismatch(year_or_month_or_day_re, value), error = N_("Invalid date.")),
-        call(value -> join(union(split(value, '-'), ["01", "01"])[1:3], '-')),
         iso8601_input_to_date,
       ),
     ),
