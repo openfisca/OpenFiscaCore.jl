@@ -102,11 +102,19 @@ function json_at_date_to_cell(cell_type::Type{Float32})
 end
 
 function json_at_date_to_cell(cell_type::Type{Int32})
-  return convertible::Convertible -> test_isa(Int32)(convertible)
+  return convertible::Convertible -> pipe(
+    test_isa(Integer),
+    test_between(typemin(Int32), typemax(Int32)),
+    call(value -> convert(Int32, value)),
+    )(convertible)
 end
 
 function json_at_date_to_cell(cell_type::Type{Int16})
-  return convertible::Convertible -> test_isa(Int16)(convertible)
+  return convertible::Convertible -> pipe(
+    test_isa(Integer),
+    test_between(typemin(Int16), typemax(Int16)),
+    call(value -> convert(Int16, value)),
+    )(convertible)
 end
 
 function json_at_date_to_cell(cell_type::Type{UTF8String})
