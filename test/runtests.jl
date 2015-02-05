@@ -22,8 +22,8 @@
 
 using Base.Test
 
-importall Converters
-importall Converters.DatesConverters
+importall Biryani
+importall Biryani.DatesConverters
 import Dates: Date, firstdayofmonth, firstdayofyear, Month, Year
 
 importall OpenFiscaCore
