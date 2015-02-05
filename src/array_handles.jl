@@ -118,14 +118,14 @@
 !(array_handle::ArrayHandle) = !get_array(array_handle)
 
 
-assert_near(left::Union(Array, Number), right::ArrayHandle; error_margin = 1) = assert_near(left, get_array(right),
-  error_margin = error_margin)
+assert_near(left::Union(Array, Number), right::ArrayHandle; error_margin = 1, message = "") = assert_near(left,
+  get_array(right), error_margin = error_margin, message = message)
 
-assert_near(left::ArrayHandle, right::Union(Array, Number); error_margin = 1) = assert_near(get_array(left), right,
-  error_margin = error_margin)
+assert_near(left::ArrayHandle, right::Union(Array, Number); error_margin = 1, message = "") = assert_near(
+  get_array(left), right, error_margin = error_margin, message = message)
 
-assert_near(left::ArrayHandle, right::ArrayHandle; error_margin = 1) = assert_near(get_array(left), get_array(right),
-  error_margin = error_margin)
+assert_near(left::ArrayHandle, right::ArrayHandle; error_margin = 1, message = "") = assert_near(get_array(left),
+  get_array(right), error_margin = error_margin, message = message)
 
 
 beginswith(array_handle::ArrayHandle, prefix) = beginswith(get_array(array_handle), prefix)

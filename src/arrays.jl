@@ -25,12 +25,12 @@
 .-(left::Array{Date}, right::Date) = Day[left_item - right for left_item in left]
 
 
-function assert_near(value::Union(Array, Number), target_value::Union(Array, Number); error_margin = 1)
+function assert_near(value::Union(Array, Number), target_value::Union(Array, Number); error_margin = 1, message = "")
   if error_margin <= 0
-    @assert(all(target_value .== value), "$value differs from $target_value")
+    @assert(all(target_value .== value), "$message$value differs from $target_value")
   else
     @assert(all(target_value .- error_margin .< value) && all(value .< target_value .+ error_margin),
-      "$value differs from $target_value with a margin $(abs(value .- target_value)) .>= $error_margin")
+      "$message$value differs from $target_value with a margin $(abs(value .- target_value)) .>= $error_margin")
   end
 end
 
