@@ -47,8 +47,7 @@ immutable ConcreteVariableAtPeriod <: VariableAtPeriod
 end
 
 
-function any_person_in_entity(array_handle::VariableAtPeriodOrPermanent, entity::Entity, period::DatePeriod,
-    roles::Array{Role})
+function any_person_in_entity(array_handle::ArrayHandle, entity::Entity, period::DatePeriod, roles::Array{Role})
   @assert(is_person(get_entity(array_handle)))
   @assert(!is_person(entity))
   entity_array = zeros(Bool, entity.count)
@@ -73,7 +72,7 @@ function any_person_in_entity(array_handle::VariableAtPeriodOrPermanent, entity:
   return ConcreteEntityArray(entity, entity_array)
 end
 
-any_person_in_entity(array_handle::VariableAtPeriodOrPermanent, entity::Entity, period::DatePeriod
+any_person_in_entity(array_handle::ArrayHandle, entity::Entity, period::DatePeriod
 ) = any_person_in_entity(array_handle, entity, period, ALL_ROLES)
 
 any_person_in_entity(array_handle::VariableAtPeriod, entity::Entity, roles::Array{Role}) = any_person_in_entity(
@@ -104,7 +103,9 @@ function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_
       formula_input = pop!(simulation.formulas_input_stack)
       if !debug_all || trace
         has_only_default_input_variables = all([
-          all(get_array(input_variable, input_variable_period) .== input_variable.definition.cell_default)
+          # TODO: getarray() has a default argument because when accept_other_period is true an input variable may be
+          # returned for a period different from the requested period.
+          all(get_array(input_variable, input_variable_period, ["dummy"]) .== input_variable.definition.cell_default)
           for (input_variable, input_variable_period) in [
             (simulation.variable_by_name[input_variable_name_at_period.name], input_variable_name_at_period.period)
             for input_variable_name_at_period in formula_input.variables_name_at_period
@@ -127,9 +128,10 @@ function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_
   return set_array(variable, formula_period, get_array(array_handle))
 end
 
-calculate(variable::PermanentVariable, period::DatePeriod) = calculate(variable)
+calculate(variable::PermanentVariable, period::DatePeriod; accept_other_period = false) = calculate(variable)
 
-calculate(variable::PeriodicVariable) = calculate(variable, variable.simulation.period)
+calculate(variable::PeriodicVariable; accept_other_period = false) = calculate(variable, variable.simulation.period,
+  accept_other_period = accept_other_period)
 
 function calculate(variable::PermanentVariable)
   array = get_array!(variable) do
@@ -149,7 +151,9 @@ function calculate(variable::PermanentVariable)
       formula_input = pop!(simulation.formulas_input_stack)
       if !debug_all || trace
         has_only_default_input_variables = all([
-          all(get_array(input_variable, input_variable_period) .== input_variable.definition.cell_default)
+          # TODO: getarray() has a default argument because when accept_other_period is true an input variable may be
+          # returned for a period different from the requested period.
+          all(get_array(input_variable, input_variable_period, ["dummy"]) .== input_variable.definition.cell_default)
           for (input_variable, input_variable_period) in [
             (simulation.variable_by_name[input_variable_name_at_period.name], input_variable_name_at_period.period)
             for input_variable_name_at_period in formula_input.variables_name_at_period
@@ -181,20 +185,27 @@ end
 
 
 function divide_calculate(variable::PeriodicVariable, period::MonthPeriod)
+  cell_type = variable.definition.cell_type
+  @assert !issubtype(cell_type, Bool)
+  @assert !issubtype(cell_type, Integer)
   variable_at_date = variable_at(variable, period, nothing)
   if variable_at_date !== nothing
     return variable_at_date
   end
   variable_at_date = calculate(variable, period, accept_other_period = true)
-  if !isa(variable_at_date.period, YearPeriod)
-    error("Requested a year period. Got $(variable_at_date.period) returned by variable $(variable.definition.name).")
-  end
   if period.start < variable_at_date.period.start || stop_date(variable_at_date.period) < stop_date(period)
     error("Requested period $(variable_at_date.period) returned by variable $(variable.definition.name) doesn't include"
       * " requested period $period.")
   end
-  return set_array(variable, period, get_array(variable_at_date) .* period.length
-    ./ (12 * variable_at_date.period.length))
+  if isa(variable_at_date.period, MonthPeriod)
+    return set_array(variable, period, get_array(variable_at_date) .* period.length ./ variable_at_date.period.length)
+  else
+    if !isa(variable_at_date.period, YearPeriod)
+      error("Requested a year period. Got $(variable_at_date.period) returned by variable $(variable.definition.name).")
+    end
+    return set_array(variable, period, get_array(variable_at_date) .* period.length
+      ./ (12 * variable_at_date.period.length))
+  end
 end
 
 divide_calculate(variable::PeriodicVariable, period::YearPeriod) = calculate(variable, period)
@@ -213,8 +224,6 @@ function entity_to_person(array_handle::VariableAtPeriodOrPermanent, period::Dat
   array = get_array(array_handle)
   entity = get_entity(array_handle)
   @assert(!is_person(entity))
-  simulation = entity.simulation
-  person = get_person(simulation)
   variable_definition = get_variable(array_handle).definition
   if roles == ALL_ROLES
     person_array = variable_definition.cell_type[
@@ -231,7 +240,7 @@ function entity_to_person(array_handle::VariableAtPeriodOrPermanent, period::Dat
       )
     ]
   end
-  return ConcreteEntityArray(entity, person_array)
+  return ConcreteEntityArray(get_person(entity.simulation), person_array)
 end
 
 entity_to_person(array_handle::VariableAtPeriodOrPermanent, period::DatePeriod) = entity_to_person(array_handle, period,
@@ -332,15 +341,15 @@ function set_array(variable::PermanentVariable, array::Union(Array, BitArray))
 end
 
 
-function single_person_in_entity(array_handle::VariableAtPeriodOrPermanent, entity::Entity, period::DatePeriod,
-    role::Role)
+function single_person_in_entity(array_handle::ArrayHandle, entity::Entity, period::DatePeriod, role::Role)
   @assert(is_person(get_entity(array_handle)))
   @assert(!is_person(entity))
-  entity_array = zeros(get_variable(array_handle).definition.cell_type, entity.count)
+  person_array = get_array(array_handle)
+  entity_array = zeros(eltype(person_array), entity.count)
   for (index_cell, role_cell, value_cell) in zip(
         get_array(get_index_variable(entity)),
         get_array(get_role_variable(entity), period),
-        get_array(array_handle),
+        person_array,
       )
     if Role(role_cell) === role
       entity_array[index_cell] = value_cell
@@ -395,17 +404,39 @@ split_person_by_role(array_handle::VariableAtPeriod, entity::Entity) = split_per
   array_handle.period, ALL_ROLES)
 
 
-sum_calculate(variable::PeriodicVariable, period::MonthPeriod) = calculate(variable, period)
-
-function sum_calculate(variable::PeriodicVariable, period::YearPeriod)
+function sum_calculate(variable::PeriodicVariable, period::MonthPeriod)
+  cell_type = variable.definition.cell_type
+  @assert !issubtype(cell_type, Bool)
   variable_at_date = variable_at(variable, period, nothing)
   if variable_at_date !== nothing
     return variable_at_date
   end
   array = zeros(variable)
   year, month, day = yearmonthday(period.start)
-  for period_number in 1:period.length
-    for month_index in 0:11
+  for month_number in 1:period.length
+    month_period = MonthPeriod(Date(year, month, day))
+    variable_at_date = calculate(variable, month_period)
+    array += get_array(variable_at_date)
+    month += 1
+    if month > 12
+      month -= 12
+      year += 1
+    end
+  end
+  return set_array(variable, period, array)
+end
+
+function sum_calculate(variable::PeriodicVariable, period::YearPeriod)
+  cell_type = variable.definition.cell_type
+  @assert !issubtype(cell_type, Bool)
+  variable_at_date = variable_at(variable, period, nothing)
+  if variable_at_date !== nothing
+    return variable_at_date
+  end
+  array = zeros(variable)
+  year, month, day = yearmonthday(period.start)
+  for year_number in 1:period.length
+    for month_number in 1:12
       month_period = MonthPeriod(Date(year, month, day))
       variable_at_date = calculate(variable, month_period)
       array += get_array(variable_at_date)
@@ -426,16 +457,16 @@ macro sum_calculate(variable, period)
 end
 
 
-function sum_person_in_entity(array_handle::VariableAtPeriodOrPermanent, entity::Entity, period::DatePeriod,
-    roles::Array{Role})
+function sum_person_in_entity(array_handle::ArrayHandle, entity::Entity, period::DatePeriod, roles::Array{Role})
   @assert(is_person(get_entity(array_handle)))
   @assert(!is_person(entity))
-  cell_type = get_variable(array_handle).definition.cell_type
+  person_array = get_array(array_handle)
+  cell_type = eltype(person_array)
   entity_array = zeros(cell_type === Bool ? Int16 : cell_type, entity.count)
   if roles == ALL_ROLES
     for (index_cell, value_cell) in zip(
           get_array(get_index_variable(entity)),
-          get_array(array_handle),
+          person_array,
         )
       entity_array[index_cell] += value_cell
     end
@@ -443,7 +474,7 @@ function sum_person_in_entity(array_handle::VariableAtPeriodOrPermanent, entity:
     for (index_cell, role_cell, value_cell) in zip(
           get_array(get_index_variable(entity)),
           get_array(get_role_variable(entity), period),
-          get_array(array_handle),
+          person_array,
         )
       if Role(role_cell) in roles
         entity_array[index_cell] += value_cell
@@ -453,7 +484,7 @@ function sum_person_in_entity(array_handle::VariableAtPeriodOrPermanent, entity:
   return ConcreteEntityArray(entity, entity_array)
 end
 
-sum_person_in_entity(array_handle::VariableAtPeriodOrPermanent, entity::Entity, period::DatePeriod
+sum_person_in_entity(array_handle::ArrayHandle, entity::Entity, period::DatePeriod
 ) = sum_person_in_entity(array_handle, entity, period, ALL_ROLES)
 
 sum_person_in_entity(array_handle::VariableAtPeriod, entity::Entity, roles::Array{Role}) = sum_person_in_entity(

@@ -88,7 +88,7 @@ Simulation(tax_benefit_system::TaxBenefitSystem, period::DatePeriod; debug = fal
   trace = trace)
 
 
-function calculate(simulation::Simulation, variable_name, period)
+function calculate(simulation::Simulation, variable_name, period; accept_other_period = false)
   if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
     variable_name_at_period = NameAtPeriod(variable_name, period)
     calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
@@ -96,10 +96,11 @@ function calculate(simulation::Simulation, variable_name, period)
       push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
     end
   end
-  return calculate(get_variable!(simulation, variable_name), period)
+  return calculate(get_variable!(simulation, variable_name), period, accept_other_period = accept_other_period)
 end
 
-calculate(simulation::Simulation, variable_name) = calculate(simulation, variable_name, simulation.period)
+calculate(simulation::Simulation, variable_name; accept_other_period = false) = calculate(simulation, variable_name,
+  simulation.period, accept_other_period = accept_other_period)
 
 
 function divide_calculate(simulation::Simulation, variable_name, period)
@@ -287,6 +288,17 @@ legislation_at(simulation::Simulation, date::Date; reference = false) = (referen
 )
 
 
+function last_period_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
+  # This formula is used for variables that are constants between events. It returns the latest known value.
+  for last_period in sort(collect(keys(variable.array_by_period)), by = period -> period.start, rev = true)
+    if last_period.start <= period.start
+      return period, variable.array_by_period[last_period]
+    end
+  end
+  return period, default_array(variable)
+end
+
+
 function print(io::IO, simulation::Simulation, indent = 0)
   print(io, "Simulation(tax_benefit_system, $(simulation.period))", indent)
 end
@@ -303,9 +315,12 @@ set_array(simulation::Simulation, variable_name, array::Array) = set_array(
 
 
 function stringify_variables_name_at_period(simulation::Simulation, variables_name_at_period::Array{NameAtPeriod})
+  # TODO: getarray() has a default argument because when accept_other_period is true an input variable may be
+  # returned for a period different from the requested period.
   return join(
     String[
-      "$(variable.definition.name)@$(get_entity(variable).definition.name)<$period>$(get_array(variable, period))"
+      "$(variable.definition.name)@$(get_entity(variable).definition.name)<$period>" *
+        "$(get_array(variable, period, nothing))"
       for (variable, period) in [
         (simulation.variable_by_name[variable_name_at_period.name], variable_name_at_period.period)
         for variable_name_at_period in variables_name_at_period

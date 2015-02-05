@@ -28,16 +28,17 @@ type VariableDefinition
   cell_format
   cell_default
   cerfa_field
+  input_variable::Bool
   label::String
-  permanent::Bool  # When true, value of variable doesn't depend from date (example: ID, birth)
+  permanent::Bool  # When true, value of variable doesn't depend from date (examples: ID, birth).
   start_date
   stop_date
   url
   values
 
   function VariableDefinition(formula, name::String, entity_definition::EntityDefinition, cell_type;
-      cell_default = nothing, cell_format = nothing, cerfa_field = nothing, label = name, permanent = false,
-      start_date = nothing, stop_date = nothing, url = nothing, values = nothing)
+      cell_default = nothing, cell_format = nothing, cerfa_field = nothing, input_variable = false, label = name,
+      permanent = false, start_date = nothing, stop_date = nothing, url = nothing, values = nothing)
     if cell_default === nothing
       cell_default =
         cell_type <: Date ? Date(1970, 1, 1) :
@@ -51,20 +52,23 @@ type VariableDefinition
         cell_type <: Year ? 0 :
         error("Unknown default for type ", cell_type)
     end
-    return new(formula, name, entity_definition, cell_type, cell_format, cell_default, cerfa_field, label, permanent,
-      start_date, stop_date, url, values)
+    return new(formula, name, entity_definition, cell_type, cell_format, cell_default, cerfa_field, input_variable,
+      label, permanent, start_date, stop_date, url, values)
   end
 end
 
 function VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type; cell_default = nothing,
-    cell_format = nothing, cerfa_field = nothing, label = name, permanent = false, start_date = nothing,
-    stop_date = nothing, url = nothing, values = nothing)
-  formula = (permanent
-    ? (simulation, variable) -> default_array(variable)
-    : (simulation, variable, period) -> (period, default_array(variable)))
+    cell_format = nothing, cerfa_field = nothing, label = name, permanent = false, return_last_period_value = false,
+    start_date = nothing, stop_date = nothing, url = nothing, values = nothing)
+  @assert !permanent || !return_last_period_value
+  formula = permanent ?
+    (simulation, variable) -> default_array(variable) :
+    return_last_period_value ?
+      last_period_value :
+      (simulation, variable, period) -> (period, default_array(variable))
   return VariableDefinition(formula, name, entity_definition, cell_type, cell_default = cell_default,
-    cell_format = cell_format, cerfa_field = cerfa_field, label = label, permanent = permanent, start_date = start_date,
-    stop_date = stop_date, url = url, values = values)
+    cell_format = cell_format, cerfa_field = cerfa_field, input_variable = true, label = label, permanent = permanent,
+    start_date = start_date, stop_date = stop_date, url = url, values = values)
 end
 
 
@@ -106,7 +110,7 @@ function json_at_date_to_cell(cell_type::Type{Int32})
     test_isa(Integer),
     test_between(typemin(Int32), typemax(Int32)),
     call(value -> convert(Int32, value)),
-    )(convertible)
+  )(convertible)
 end
 
 function json_at_date_to_cell(cell_type::Type{Int16})
@@ -114,7 +118,7 @@ function json_at_date_to_cell(cell_type::Type{Int16})
     test_isa(Integer),
     test_between(typemin(Int16), typemax(Int16)),
     call(value -> convert(Int16, value)),
-    )(convertible)
+  )(convertible)
 end
 
 function json_at_date_to_cell(cell_type::Type{UTF8String})
