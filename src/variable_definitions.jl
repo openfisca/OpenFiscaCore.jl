@@ -130,7 +130,7 @@ json_at_date_to_cell(variable_definition::VariableDefinition) = json_at_date_to_
 
 function json_to_cell(variable_definition::VariableDefinition)
   return convertible::Convertible -> condition(
-    test_isa(Dict{String, Any}),
+    test_isa(Dict),
     pipe(
       # Value is a dict of (period, value) couples.
       uniform_mapping(
