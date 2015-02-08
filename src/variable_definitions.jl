@@ -34,32 +34,46 @@ type VariableDefinition
   start_date
   stop_date
   url
+  value_at_date_to_cell::Function
   values
 
   function VariableDefinition(formula, name::String, entity_definition::EntityDefinition, cell_type;
       cell_default = nothing, cell_format = nothing, cerfa_field = nothing, input_variable = false, label = name,
-      permanent = false, start_date = nothing, stop_date = nothing, url = nothing, values = nothing)
+      permanent = false, start_date = nothing, stop_date = nothing, url = nothing, value_at_date_to_cell = nothing,
+      values = nothing)
     if cell_default === nothing
       cell_default =
         cell_type <: Date ? Date(1970, 1, 1) :
         cell_type <: Day ? 0 :
-        cell_type <: Real ? 0.0 :
-        cell_type <: Int ? 0 :
+        cell_type <: FloatingPoint ? 0.0 :
+        cell_type <: Integer ? 0 :
         cell_type <: Month ? 0 :
         cell_type <: Role ? Role(0) :
         cell_type <: String ? "" :
-        cell_type <: Unsigned ? 0 :
         cell_type <: Year ? 0 :
         error("Unknown default for type ", cell_type)
     end
+    if value_at_date_to_cell === nothing
+      value_at_date_to_cell =
+        cell_type <: Bool ? value_at_date_to_bool :
+        cell_type <: Date ? value_at_date_to_date :
+        cell_type <: Day ? value_at_date_to_day :
+        cell_type <: FloatingPoint ? value_at_date_to_floating_point :
+        cell_type <: Integer ? value_at_date_to_integer :
+        cell_type <: Month ? value_at_date_to_month :
+        cell_type <: Role ? value_at_date_to_role :
+        cell_type <: String ? value_at_date_to_string :
+        cell_type <: Year ? value_at_date_to_year :
+        error("Unknown converter value_at_date_to_cell for type ", cell_type)
+    end
     return new(formula, name, entity_definition, cell_type, cell_format, cell_default, cerfa_field, input_variable,
-      label, permanent, start_date, stop_date, url, values)
+      label, permanent, start_date, stop_date, url, value_at_date_to_cell, values)
   end
 end
 
 function VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type; cell_default = nothing,
     cell_format = nothing, cerfa_field = nothing, label = name, permanent = false, return_last_period_value = false,
-    start_date = nothing, stop_date = nothing, url = nothing, values = nothing)
+    start_date = nothing, stop_date = nothing, url = nothing, value_at_date_to_cell = nothing, values = nothing)
   @assert !permanent || !return_last_period_value
   formula = permanent ?
     (simulation, variable) -> default_array(variable) :
@@ -68,18 +82,38 @@ function VariableDefinition(name::String, entity_definition::EntityDefinition, c
       (simulation, variable, period) -> (period, default_array(variable))
   return VariableDefinition(formula, name, entity_definition, cell_type, cell_default = cell_default,
     cell_format = cell_format, cerfa_field = cerfa_field, input_variable = true, label = label, permanent = permanent,
-    start_date = start_date, stop_date = stop_date, url = url, values = values)
+    start_date = start_date, stop_date = stop_date, url = url, value_at_date_to_cell = value_at_date_to_cell,
+    values = values)
 end
 
 
-function json_at_date_to_cell(cell_type::Type{Bool})
+function to_cell(variable_definition::VariableDefinition)
+  return convertible::Convertible -> condition(
+    test_isa(Dict),
+    pipe(
+      # Value is a dict of (period, value) couples.
+      uniform_mapping(
+        pipe(
+          to_period,
+          require,
+        ),
+        variable_definition.value_at_date_to_cell(variable_definition),
+      ),
+    ),
+    variable_definition.value_at_date_to_cell(variable_definition),
+  )(convertible)
+end
+
+
+function value_at_date_to_bool(variable_definition::VariableDefinition)
   return convertible::Convertible -> pipe(
     test_isa(Union(Bool, Int, String)),
     guess_bool,
   )(convertible)
 end
 
-function json_at_date_to_cell(cell_type::Type{Date})
+
+function value_at_date_to_date(variable_definition::VariableDefinition)
   return convertible::Convertible -> pipe(
     condition(
       # test_isa(Date),
@@ -98,49 +132,79 @@ function json_at_date_to_cell(cell_type::Type{Date})
   )(convertible)
 end
 
-function json_at_date_to_cell(cell_type::Type{Float32})
+
+function value_at_date_to_day(variable_definition::VariableDefinition)
+  return convertible::Convertible -> condition(
+    test_isa(Day),
+    noop,
+    pipe(
+      value_at_date_to_integer(variable_definition),
+      call(value -> Day(value)),
+    ),
+  )(convertible)
+end
+
+
+function value_at_date_to_floating_point(variable_definition::VariableDefinition)
   return convertible::Convertible -> pipe(
     test_isa(Real),
     to_float,
   )(convertible)
 end
 
-function json_at_date_to_cell(cell_type::Type{Int32})
+
+function value_at_date_to_integer(variable_definition::VariableDefinition)
   return convertible::Convertible -> pipe(
-    test_isa(Integer),
-    test_between(typemin(Int32), typemax(Int32)),
-    call(value -> convert(Int32, value)),
+    test_isa(Real),
+    to_int,
+#     test_between(typemin(Int32), typemax(Int32)),
+#     call(value -> convert(Int32, value)),
   )(convertible)
 end
 
-function json_at_date_to_cell(cell_type::Type{Int16})
-  return convertible::Convertible -> pipe(
-    test_isa(Integer),
-    test_between(typemin(Int16), typemax(Int16)),
-    call(value -> convert(Int16, value)),
-  )(convertible)
-end
 
-function json_at_date_to_cell(cell_type::Type{UTF8String})
-  return convertible::Convertible -> test_isa(String)(convertible)
-end
-
-json_at_date_to_cell(variable_definition::VariableDefinition) = json_at_date_to_cell(variable_definition.cell_type)
-
-
-function json_to_cell(variable_definition::VariableDefinition)
+function value_at_date_to_month(variable_definition::VariableDefinition)
   return convertible::Convertible -> condition(
-    test_isa(Dict),
+    test_isa(Month),
+    noop,
     pipe(
-      # Value is a dict of (period, value) couples.
-      uniform_mapping(
-        pipe(
-          to_period,
-          require,
-        ),
-        json_at_date_to_cell(variable_definition),
-      ),
+      value_at_date_to_integer(variable_definition),
+      call(value -> Month(value)),
     ),
-    json_at_date_to_cell(variable_definition),
+  )(convertible)
+end
+
+
+function value_at_date_to_role(variable_definition::VariableDefinition)
+  return convertible::Convertible -> condition(
+    test_isa(Role),
+    noop,
+    pipe(
+      value_at_date_to_integer(variable_definition),
+      call(value -> Role(value)),
+    ),
+  )(convertible)
+end
+
+
+function value_at_date_to_string(variable_definition::VariableDefinition)
+  return convertible::Convertible -> condition(
+    test_isa(Real),
+    call(string),
+    test_isa(String),
+    noop,
+    fail(error = N_("Unexpected type for string.")),
+  )(convertible)
+end
+
+
+function value_at_date_to_year(variable_definition::VariableDefinition)
+  return convertible::Convertible -> condition(
+    test_isa(Year),
+    noop,
+    pipe(
+      value_at_date_to_integer(variable_definition),
+      call(value -> Year(value)),
+    ),
   )(convertible)
 end
