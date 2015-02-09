@@ -177,7 +177,7 @@ function fill!(simulation::Simulation, scenario::Scenario)
       variable_periods = Set{DatePeriod}()
       for member in values(test_case[entity_plural])
         cell = get(member, variable_name, nothing)
-        if isa(cell, Dict)
+        if isa(cell, Union(Dict, OrderedDict))
           if any(value -> value !== nothing, values(cell))
             union!(variable_periods, keys(cell))
           end
@@ -190,7 +190,7 @@ function fill!(simulation::Simulation, scenario::Scenario)
       for variable_period in variable_periods
         variable_values = map(values(test_case[entity_plural])) do member
           cell = get(member, variable_name, nothing)
-          return isa(cell, Dict) ?
+          return isa(cell, Union(Dict, OrderedDict)) ?
             get(cell, variable_period, variable_definition.cell_default) :
             variable_period == simulation.period ? cell : variable_definition.cell_default
         end
