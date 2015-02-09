@@ -118,10 +118,10 @@
 !(array_handle::ArrayHandle) = !get_array(array_handle)
 
 
-assert_near(left::Union(Array, Number), right::ArrayHandle; error_margin = 1, message = "") = assert_near(left,
+assert_near(left::Union(Array, BitArray, Number), right::ArrayHandle; error_margin = 1, message = "") = assert_near(left,
   get_array(right), error_margin = error_margin, message = message)
 
-assert_near(left::ArrayHandle, right::Union(Array, Number); error_margin = 1, message = "") = assert_near(
+assert_near(left::ArrayHandle, right::Union(Array, BitArray, Number); error_margin = 1, message = "") = assert_near(
   get_array(left), right, error_margin = error_margin, message = message)
 
 assert_near(left::ArrayHandle, right::ArrayHandle; error_margin = 1, message = "") = assert_near(get_array(left),

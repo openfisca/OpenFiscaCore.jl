@@ -34,6 +34,12 @@ function assert_near(value::Union(Array, Number), target_value::Union(Array, Num
   end
 end
 
+function assert_near(value::Union(Array{Bool}, BitArray, Bool), target_value::Union(Array{Bool}, BitArray, Bool);
+    error_margin = 0, message = "")
+  # Note: Ignore error_margin when comparing booleans.
+  @assert(all(target_value .== value), "$message$value differs from $target_value")
+end
+
 
 beginswith(array::Array, prefix) = Bool[beginswith(cell, prefix) for cell in array]
 
