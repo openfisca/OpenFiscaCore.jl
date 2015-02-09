@@ -407,6 +407,7 @@ split_person_by_role(array_handle::VariableAtPeriod, entity::Entity) = split_per
 function sum_calculate(variable::PeriodicVariable, period::MonthPeriod)
   cell_type = variable.definition.cell_type
   @assert !issubtype(cell_type, Bool)
+  @assert !issubtype(cell_type, Integer)  # TODO: Remove this test, once all Python formulas work in Julia.
   variable_at_date = variable_at(variable, period, nothing)
   if variable_at_date !== nothing
     return variable_at_date
