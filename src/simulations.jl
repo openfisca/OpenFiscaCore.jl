@@ -300,7 +300,7 @@ end
 
 
 function print(io::IO, simulation::Simulation, indent = 0)
-  print(io, "Simulation(tax_benefit_system, $(simulation.period))", indent)
+  print(io, "Simulation(tax_benefit_system, $(simulation.period))")
 end
 
 

@@ -318,6 +318,15 @@ get_variable(variable_at_date::VariableAtPeriod) = variable_at_date.variable
 get_variable(variable::PermanentVariable) = variable
 
 
+print(io::IO, variable::PermanentVariable, indent = 0) = print(io,
+  "PermanentVariable($(variable.definition.name), $(variable.array))")
+
+function print(io::IO, variable_at_period::VariableAtPeriod, indent = 0)
+  name = variable_at_period.variable.definition.name
+  print(io, "VariableAtPeriod($name, $(variable_at_period.period), $(get_array(variable_at_period)))")
+end
+
+
 function set_array(variable::PeriodicVariable, period::DatePeriod, array::Union(Array, BitArray))
   @assert(length(array) == get_entity(variable).count)
   variable.array_by_period[period] = array

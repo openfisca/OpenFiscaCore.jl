@@ -32,3 +32,7 @@ get_array(entity_array::EntityArray) = entity_array.array
 
 
 get_entity(entity_array::EntityArray) = entity_array.entity
+
+
+print(io::IO, variable::EntityArray, indent = 0) = print(io,
+  "EntityArray($(variable.entity.definition.name), $(variable.array))")
