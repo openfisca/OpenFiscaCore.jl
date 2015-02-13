@@ -31,15 +31,39 @@ PARENT2 = Role(2)
 # Input variables
 
 
-age_en_mois = VariableDefinition("age_en_mois", individu, Month, label = "Âge (en nombre de mois)")
-birth = VariableDefinition("birth", individu, Date, label = "Date de naissance", permanent = true)
-depcom = VariableDefinition("depcom", famille, String,
-  label = """Code INSEE "depcom" de la commune de résidence de la famille""")
-id_famille = VariableDefinition("id_famille", individu, Unsigned, label = "Identifiant de la famille",
-  permanent = true)
-role_dans_famille = VariableDefinition("role_dans_famille", individu, Role, label = "Rôle dans la famille",
-  permanent = true)
-salaire_brut = VariableDefinition("salaire_brut", individu, Float32, label = "Salaire brut")
+age_en_mois = VariableDefinition(missing_value, "age_en_mois", individu, Month,
+  input_variable = true,
+  label = "Âge (en nombre de mois)",
+)
+
+birth = VariableDefinition(permanent_default_value, "birth", individu, Date,
+  cell_default = Date(1970, 1, 1),
+  input_variable = true,
+  label = "Date de naissance",
+  permanent = true,
+)
+
+depcom = VariableDefinition(requested_period_last_value, "depcom", famille, String,
+  input_variable = true,
+  label = """Code INSEE "depcom" de la commune de résidence de la famille""",
+)
+
+id_famille = VariableDefinition(permanent_default_value, "id_famille", individu, Unsigned,
+  input_variable = true,
+  label = "Identifiant de la famille",
+  permanent = true,
+)
+
+role_dans_famille = VariableDefinition(permanent_default_value, "role_dans_famille", individu, Role,
+  input_variable = true,
+  label = "Rôle dans la famille",
+  permanent = true,
+)
+
+salaire_brut = VariableDefinition(last_duration_last_value, "salaire_brut", individu, Float32,
+  input_variable = true,
+  label = "Salaire brut",
+)
 
 
 # Formulas

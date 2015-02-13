@@ -273,6 +273,18 @@ function get_variable!(simulation::Simulation, variable_name)
 end
 
 
+function last_duration_last_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
+  # This formula is used for variables that are constants between events but are period size dependent.
+  # It returns the latest known value for the requested start of period but with the last period size.
+  for last_period in sort(collect(keys(variable.array_by_period)), by = period -> period.start, rev = true)
+    if last_period.start <= period.start
+      return typeof(last_period)(period.start, last_period.length), variable.array_by_period[last_period]
+    end
+  end
+  return period, default_array(variable)
+end
+
+
 function legislation_at(simulation::Simulation, path, date::Date; reference = false)
   legislation_at_date = legislation_at(simulation, date, reference = reference)
   return path !== nothing && !isempty(path) ? legislation_at(legislation_at_date, path) : legislation_at_date
@@ -289,8 +301,29 @@ legislation_at(simulation::Simulation, date::Date; reference = false) = (referen
 )
 
 
-function last_period_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
-  # This formula is used for variables that are constants between events. It returns the latest known value.
+function missing_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
+  error("Missing value for variable $(variable.definition.name) at $(period)")
+end
+
+
+function permanent_default_value(simulation::Simulation, variable::PermanentVariable)
+  return default_array(variable)
+end
+
+
+function print(io::IO, simulation::Simulation, indent = 0)
+  print(io, "Simulation(tax_benefit_system, $(simulation.period))")
+end
+
+
+function requested_period_default_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
+  return period, default_array(variable)
+end
+
+
+function requested_period_last_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
+  # This formula is used for variables that are constants between events and period size independent.
+  # It returns the latest known value for the requested period.
   for last_period in sort(collect(keys(variable.array_by_period)), by = period -> period.start, rev = true)
     if last_period.start <= period.start
       return period, variable.array_by_period[last_period]

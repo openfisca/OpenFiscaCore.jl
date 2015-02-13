@@ -71,21 +71,6 @@ type VariableDefinition
   end
 end
 
-function VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type; cell_default = nothing,
-    cell_format = nothing, cerfa_field = nothing, label = name, permanent = false, return_last_period_value = false,
-    start_date = nothing, stop_date = nothing, url = nothing, value_at_date_to_cell = nothing, values = nothing)
-  @assert !permanent || !return_last_period_value
-  formula = permanent ?
-    (simulation, variable) -> default_array(variable) :
-    return_last_period_value ?
-      last_period_value :
-      (simulation, variable, period) -> (period, default_array(variable))
-  return VariableDefinition(formula, name, entity_definition, cell_type, cell_default = cell_default,
-    cell_format = cell_format, cerfa_field = cerfa_field, input_variable = true, label = label, permanent = permanent,
-    start_date = start_date, stop_date = stop_date, url = url, value_at_date_to_cell = value_at_date_to_cell,
-    values = values)
-end
-
 
 function to_cell(variable_definition::VariableDefinition)
   return convertible::Convertible -> condition(
