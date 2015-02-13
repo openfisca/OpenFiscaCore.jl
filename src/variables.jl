@@ -371,7 +371,8 @@ function single_person_in_entity(array_handle::ArrayHandle, entity::Entity, peri
   @assert(is_person(get_entity(array_handle)))
   @assert(!is_person(entity))
   person_array = get_array(array_handle)
-  entity_array = zeros(eltype(person_array), entity.count)
+  cell_type = eltype(person_array)
+  entity_array = issubtype(cell_type, String) ? fill("", entity.count) : zeros(cell_type, entity.count)
   for (index_cell, role_cell, value_cell) in zip(
         get_array(get_index_variable(entity)),
         get_array(get_role_variable(entity), period),
