@@ -333,11 +333,6 @@ function requested_period_last_value(simulation::Simulation, variable::PeriodicV
 end
 
 
-function print(io::IO, simulation::Simulation, indent = 0)
-  print(io, "Simulation(tax_benefit_system, $(simulation.period))")
-end
-
-
 set_array(simulation::Simulation, variable_name, period::DatePeriod, array::Array) = set_array(
   get_variable!(simulation, variable_name), period, array)
 
