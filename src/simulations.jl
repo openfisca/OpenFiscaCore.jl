@@ -163,10 +163,10 @@ function fill!(simulation::Simulation, scenario::Scenario)
   for entity in values(simulation.entity_by_name)
     entity_plural = entity.definition.name_plural
     allowed_variables_name = Set(vcat([
-      keys(filter(member) do key, value
+      collect(keys(filter(member) do key, value
         return value !== nothing && !(key in (entity.definition.index_variable_name,
           entity.definition.role_variable_name))
-      end)
+      end))
       for member in values(test_case[entity_plural])
     ]...))
     for (variable_name, variable_definition) in variable_definition_by_name
@@ -190,9 +190,10 @@ function fill!(simulation::Simulation, scenario::Scenario)
       for variable_period in variable_periods
         variable_values = map(values(test_case[entity_plural])) do member
           cell = get(member, variable_name, nothing)
-          return isa(cell, Union(Dict, OrderedDict)) ?
-            get(cell, variable_period, variable_definition.cell_default) :
-            variable_period == simulation.period ? cell : variable_definition.cell_default
+          cell_at_period = isa(cell, Union(Dict, OrderedDict)) ?
+            get(cell, variable_period, nothing) :
+            variable_period == simulation.period ? cell : nothing
+          return cell_at_period === nothing ? variable_definition.cell_default : cell_at_period
         end
         set_array(variable, variable_period, repeat(variable_values, outer = [scenario_steps_count]))
       end
