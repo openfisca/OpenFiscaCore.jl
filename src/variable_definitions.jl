@@ -140,6 +140,13 @@ end
 
 function value_at_date_to_integer(variable_definition::VariableDefinition)
   return convertible::Convertible -> pipe(
+    variable_definition.values === nothing ? noop : condition(
+      test_isa(String),
+      pipe(
+        test_in(keys(variable_definition.values)),
+        call(label -> variable_definition.values[label]),
+      ),
+    ),
     test_isa(Real),
     to_int,
 #     test_between(typemin(Int32), typemax(Int32)),
