@@ -43,7 +43,7 @@ type VariableDefinition
       values = nothing)
     if cell_default === nothing
       cell_default =
-        cell_type <: Date ? Date(1970, 1, 1) :
+        cell_type <: Bool ? false :
         cell_type <: Day ? 0 :
         cell_type <: FloatingPoint ? 0.0 :
         cell_type <: Integer ? 0 :
