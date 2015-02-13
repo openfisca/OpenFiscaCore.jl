@@ -328,24 +328,41 @@ end
 
 
 function set_array(variable::PeriodicVariable, period::DatePeriod, array::Union(Array, BitArray))
-  @assert(length(array) == get_entity(variable).count)
-  variable.array_by_period[period] = array
+  @assert(array !== nothing, "Can't set variable $(variable.definition.name) to nothing.")
+  @assert(length(array) == get_entity(variable).count, "Can't set variable $(variable.definition.name) to an array" *
+    " that is not of length $(get_entity(variable).count): $(array).")
+  @assert(all(cell -> cell !== nothing, array),
+    "Can't set variable $(variable.definition.name) to an array containing nothing items: $array.")
+  cell_type = variable.definition.cell_type
+  variable.array_by_period[period] = convert(cell_type === Bool ? BitArray: Array{cell_type}, array)
   return ConcreteVariableAtPeriod(variable, period)
 end
 
 function set_array(variable::PeriodicVariable, variable_at_date::VariableAtPeriod)
   array = get_array(variable_at_date)
-  @assert(length(array) == get_entity(variable).count)
-  variable.array_by_period[variable_at_date.period] = array
+  @assert(array !== nothing, "Can't set variable $(variable.definition.name) to nothing.")
+  @assert(length(array) == get_entity(variable).count, "Can't set variable $(variable.definition.name) to an array" *
+    " that is not of length $(get_entity(variable).count): $(array).")
+  @assert(all(cell -> cell !== nothing, array),
+    "Can't set variable $(variable.definition.name) to an array containing nothing items: $array.")
+  cell_type = variable.definition.cell_type
+  variable.array_by_period[variable_at_date.period] = convert(cell_type === Bool ? BitArray: Array{cell_type}, array)
   return variable_at_date
 end
 
 set_array(variable::PeriodicVariable, array::Union(Array, BitArray)) = set_array(variable, variable.simulation.period,
   array)
 
+set_array(variable::PermanentVariable, period::DatePeriod, array::Union(Array, BitArray)) = set_array(variable, array)
+
 function set_array(variable::PermanentVariable, array::Union(Array, BitArray))
-  @assert(length(array) == get_entity(variable).count)
-  variable.array = array
+  @assert(array !== nothing, "Can't set variable $(variable.definition.name) to nothing.")
+  @assert(length(array) == get_entity(variable).count, "Can't set variable $(variable.definition.name) to an array" *
+    " that is not of length $(get_entity(variable).count): $(array).")
+  @assert(all(cell -> cell !== nothing, array),
+    "Can't set variable $(variable.definition.name) to an array containing nothing items: $array.")
+  cell_type = variable.definition.cell_type
+  variable.array = convert(cell_type === Bool ? BitArray: Array{cell_type}, array)
   return variable
 end
 
