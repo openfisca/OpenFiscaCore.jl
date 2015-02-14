@@ -249,7 +249,6 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
 
   array = zeros(variable)
   requested_period = period
-  stop = stop_date(period)
   while true
     variable_at_period = calculate(variable, requested_period, accept_other_period = true)
     requested_start = requested_period.start
@@ -276,11 +275,11 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
       array .+= get_array(variable_at_period) .* intersection_length ./ (12 * returned_period.length)
     end
 
-    requested_period = MonthPeriod(requested_start + Month(intersection_length),
-      requested_period.length - intersection_length)
-    if requested_period.start > stop
+    requested_period_length = requested_period.length - intersection_length
+    if requested_period_length <= 0
       return set_array(variable, period, array)
     end
+    requested_period = MonthPeriod(requested_start + Month(intersection_length), requested_period_length)
   end
 end
 
@@ -297,7 +296,6 @@ function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
 
   array = zeros(variable)
   requested_period = period
-  stop = stop_date(period)
   while true
     variable_at_period = calculate(variable, requested_period, accept_other_period = true)
     requested_start = requested_period.start
@@ -324,11 +322,12 @@ function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
       array .+= get_array(variable_at_period) .* intersection_length ./ (returned_period.length * 12)
     end
 
-    requested_period = YearPeriod(requested_start + Month(intersection_length),
-      int(ceil((requested_period.length - intersection_length) / 12)))
-    if requested_period.start > stop
+    # Note: Bug with Julia 0.3.2 when int() functions are not used
+    requested_period_length = int(ceil((int(requested_period.length) - int(intersection_length)) / 12))
+    if requested_period_length <= 0
       return set_array(variable, period, array)
     end
+    requested_period = YearPeriod(requested_start + Month(intersection_length), requested_period_length)
   end
 end
 
