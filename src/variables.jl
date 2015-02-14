@@ -83,9 +83,9 @@ any_person_in_entity(array_handle::VariableAtPeriod, entity::Entity) = any_perso
 
 
 function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_period = false)
-  variable_at_date = variable_at(variable, period, nothing)
-  if variable_at_date !== nothing
-    return variable_at_date
+  variable_at_period = variable_at(variable, period, nothing)
+  if variable_at_period !== nothing
+    return variable_at_period
   end
   definition = variable.definition
   if ((definition.start_date === nothing || definition.start_date <= period.start)
@@ -181,16 +181,18 @@ function calculate_add(variable::PeriodicVariable, period::MonthPeriod)
   cell_type = variable.definition.cell_type
   @assert !issubtype(cell_type, Bool)
   @assert !issubtype(cell_type, Integer)  # TODO: Remove this test, once all Python formulas work in Julia.
-  variable_at_date = variable_at(variable, period, nothing)
-  if variable_at_date !== nothing
-    return variable_at_date
+
+  variable_at_period = variable_at(variable, period, nothing)
+  if variable_at_period !== nothing
+    return variable_at_period
   end
+
   array = zeros(variable)
   year, month, day = yearmonthday(period.start)
   for month_number in 1:period.length
     month_period = MonthPeriod(Date(year, month, day))
-    variable_at_date = calculate(variable, month_period)
-    array .+= get_array(variable_at_date)
+    variable_at_period = calculate(variable, month_period)
+    array .+= get_array(variable_at_period)
     month += 1
     if month > 12
       month -= 12
@@ -203,17 +205,20 @@ end
 function calculate_add(variable::PeriodicVariable, period::YearPeriod)
   cell_type = variable.definition.cell_type
   @assert !issubtype(cell_type, Bool)
-  variable_at_date = variable_at(variable, period, nothing)
-  if variable_at_date !== nothing
-    return variable_at_date
+  @assert !issubtype(cell_type, Integer)  # TODO: Remove this test, once all Python formulas work in Julia.
+
+  variable_at_period = variable_at(variable, period, nothing)
+  if variable_at_period !== nothing
+    return variable_at_period
   end
+
   array = zeros(variable)
   year, month, day = yearmonthday(period.start)
   for year_number in 1:period.length
     for month_number in 1:12
       month_period = MonthPeriod(Date(year, month, day))
-      variable_at_date = calculate(variable, month_period)
-      array += get_array(variable_at_date)
+      variable_at_period = calculate(variable, month_period)
+      array += get_array(variable_at_period)
       month += 1
       if month > 12
         month -= 12
@@ -237,18 +242,18 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
   @assert !issubtype(cell_type, Integer)
   @assert day(period.start) == 1
 
-  variable_at_date = variable_at(variable, period, nothing)
-  if variable_at_date !== nothing
-    return variable_at_date
+  variable_at_period = variable_at(variable, period, nothing)
+  if variable_at_period !== nothing
+    return variable_at_period
   end
 
   array = zeros(variable)
   requested_period = period
   stop = stop_date(period)
   while true
-    variable_at_date = calculate(variable, requested_period, accept_other_period = true)
+    variable_at_period = calculate(variable, requested_period, accept_other_period = true)
     requested_start = requested_period.start
-    returned_period = variable_at_date.period
+    returned_period = variable_at_period.period
     returned_start = returned_period.start
     @assert day(returned_start) == 1
     if requested_start < returned_start || stop_date(returned_period) < requested_start
@@ -260,7 +265,7 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
     if isa(returned_period, MonthPeriod)
       intersection_length = min(requested_start_months + requested_period.length,
         returned_start_months + returned_period.length) - requested_start_months
-      array .+= get_array(variable_at_date) .* intersection_length ./ returned_period.length
+      array .+= get_array(variable_at_period) .* intersection_length ./ returned_period.length
     else
       if !isa(returned_period, YearPeriod)
         name = variable.definition.name
@@ -269,7 +274,7 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
       end
       intersection_length = min(requested_start_months + requested_period.length,
         returned_start_months + 12 * returned_period.length) - requested_start_months
-      array .+= get_array(variable_at_date) .* intersection_length ./ (12 * returned_period.length)
+      array .+= get_array(variable_at_period) .* intersection_length ./ (12 * returned_period.length)
     end
 
     requested_period = MonthPeriod(requested_start + Month(intersection_length),
@@ -286,18 +291,18 @@ function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
   @assert !issubtype(cell_type, Integer)
   @assert day(period.start) == 1
 
-  variable_at_date = variable_at(variable, period, nothing)
-  if variable_at_date !== nothing
-    return variable_at_date
+  variable_at_period = variable_at(variable, period, nothing)
+  if variable_at_period !== nothing
+    return variable_at_period
   end
 
   array = zeros(variable)
   requested_period = period
   stop = stop_date(period)
   while true
-    variable_at_date = calculate(variable, requested_period, accept_other_period = true)
+    variable_at_period = calculate(variable, requested_period, accept_other_period = true)
     requested_start = requested_period.start
-    returned_period = variable_at_date.period
+    returned_period = variable_at_period.period
     returned_start = returned_period.start
     @assert day(returned_start) == 1
     if requested_start < returned_start || stop_date(returned_period) < requested_start
@@ -309,7 +314,7 @@ function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
     if isa(returned_period, MonthPeriod)
       intersection_length = min(requested_start_months + requested_period.length * 12,
         returned_start_months + returned_period.length) - requested_start_months
-      array .+= get_array(variable_at_date) .* intersection_length ./ returned_period.length
+      array .+= get_array(variable_at_period) .* intersection_length ./ returned_period.length
     else
       if !isa(returned_period, YearPeriod)
         name = variable.definition.name
@@ -318,7 +323,7 @@ function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
       end
       intersection_length = min(requested_start_months + requested_period.length * 12,
         returned_start_months + returned_period.length * 12) - requested_start_months
-      array .+= get_array(variable_at_date) .* intersection_length ./ (returned_period.length * 12)
+      array .+= get_array(variable_at_period) .* intersection_length ./ (returned_period.length * 12)
     end
 
     requested_period = YearPeriod(requested_start + Month(intersection_length),
@@ -340,28 +345,37 @@ function calculate_divide(variable::PeriodicVariable, period::MonthPeriod)
   cell_type = variable.definition.cell_type
   @assert !issubtype(cell_type, Bool)
   @assert !issubtype(cell_type, Integer)
-  variable_at_date = variable_at(variable, period, nothing)
-  if variable_at_date !== nothing
-    return variable_at_date
+
+  variable_at_period = variable_at(variable, period, nothing)
+  if variable_at_period !== nothing
+    return variable_at_period
   end
-  variable_at_date = calculate(variable, period, accept_other_period = true)
-  if period.start < variable_at_date.period.start || stop_date(variable_at_date.period) < stop_date(period)
-    error("Period $(variable_at_date.period) returned by variable $(variable.definition.name) doesn't include" *
+
+  variable_at_period = calculate(variable, period, accept_other_period = true)
+  if period.start < variable_at_period.period.start || stop_date(variable_at_period.period) < stop_date(period)
+    error("Period $(variable_at_period.period) returned by variable $(variable.definition.name) doesn't include" *
       " requested period $period.")
   end
-  if isa(variable_at_date.period, MonthPeriod)
-    return set_array(variable, period, get_array(variable_at_date) .* period.length ./ variable_at_date.period.length)
+  if isa(variable_at_period.period, MonthPeriod)
+    return set_array(variable, period,
+      get_array(variable_at_period) .* period.length ./ variable_at_period.period.length)
   else
-    if !isa(variable_at_date.period, YearPeriod)
+    if !isa(variable_at_period.period, YearPeriod)
       name = variable.definition.name
-      error("Requested a monthly or yearly period. Got $(variable_at_date.period) returned by variable $(name).")
+      error("Requested a monthly or yearly period. Got $(variable_at_period.period) returned by variable $(name).")
     end
-    return set_array(variable, period, get_array(variable_at_date) .* period.length
-      ./ (12 * variable_at_date.period.length))
+    return set_array(variable, period, get_array(variable_at_period) .* period.length
+      ./ (12 * variable_at_period.period.length))
   end
 end
 
-calculate_divide(variable::PeriodicVariable, period::YearPeriod) = calculate(variable, period)
+function calculate_divide(variable::PeriodicVariable, period::YearPeriod)
+  cell_type = variable.definition.cell_type
+  @assert !issubtype(cell_type, Bool)
+  @assert !issubtype(cell_type, Integer)
+
+  return calculate(variable, period)
+end
 
 
 macro calculate_divide(variable, period)
@@ -415,10 +429,10 @@ entity_to_person(array_handle::VariableAtPeriod, roles::Array{Role}) = entity_to
 entity_to_person(array_handle::VariableAtPeriod) = entity_to_person(array_handle, array_handle.period, ALL_ROLES)
 
 
-get_array(variable_at_date::VariableAtPeriod, default) = get_array(variable_at_date.variable, variable_at_date.period,
-  default)
+get_array(variable_at_period::VariableAtPeriod, default) = get_array(variable_at_period.variable,
+  variable_at_period.period, default)
 
-get_array(variable_at_date::VariableAtPeriod) = get_array(variable_at_date.variable, variable_at_date.period)
+get_array(variable_at_period::VariableAtPeriod) = get_array(variable_at_period.variable, variable_at_period.period)
 
 get_array(variable::PeriodicVariable, period::DatePeriod, default) = get(variable.array_by_period, period, default)
 
@@ -468,12 +482,12 @@ function get_array!(func::Function, variable::PermanentVariable)
 end
 
 
-get_entity(variable_at_date::VariableAtPeriod) = get_entity(variable_at_date.variable)
+get_entity(variable_at_period::VariableAtPeriod) = get_entity(variable_at_period.variable)
 
 get_entity(variable::Variable) = get_entity(variable.simulation, variable.definition.entity_definition)
 
 
-get_variable(variable_at_date::VariableAtPeriod) = variable_at_date.variable
+get_variable(variable_at_period::VariableAtPeriod) = variable_at_period.variable
 
 get_variable(variable::PermanentVariable) = variable
 
@@ -498,16 +512,16 @@ function set_array(variable::PeriodicVariable, period::DatePeriod, array::Union(
   return ConcreteVariableAtPeriod(variable, period)
 end
 
-function set_array(variable::PeriodicVariable, variable_at_date::VariableAtPeriod)
-  array = get_array(variable_at_date)
+function set_array(variable::PeriodicVariable, variable_at_period::VariableAtPeriod)
+  array = get_array(variable_at_period)
   @assert(array !== nothing, "Can't set variable $(variable.definition.name) to nothing.")
   @assert(length(array) == get_entity(variable).count, "Can't set variable $(variable.definition.name) to an array" *
     " that is not of length $(get_entity(variable).count): $(array).")
   @assert(all(cell -> cell !== nothing, array),
     "Can't set variable $(variable.definition.name) to an array containing nothing items: $array.")
   cell_type = variable.definition.cell_type
-  variable.array_by_period[variable_at_date.period] = convert(cell_type === Bool ? BitArray: Array{cell_type}, array)
-  return variable_at_date
+  variable.array_by_period[variable_at_period.period] = convert(cell_type === Bool ? BitArray: Array{cell_type}, array)
+  return variable_at_period
 end
 
 set_array(variable::PeriodicVariable, array::Union(Array, BitArray)) = set_array(variable, variable.simulation.period,
@@ -643,11 +657,11 @@ function variable_at(variable::PermanentVariable, default)
 end
 
 function variable_at(variable::PeriodicVariable, period::DatePeriod)
-  variable_at_date = variable_at(variable, period, nothing)
-  if variable_at_date === nothing
+  variable_at_period = variable_at(variable, period, nothing)
+  if variable_at_period === nothing
     throw(KeyError(period))
   end
-  return variable_at_date
+  return variable_at_period
 end
 
 variable_at(variable::PeriodicVariable) = variable_at(variable, variable.simulation.period)
