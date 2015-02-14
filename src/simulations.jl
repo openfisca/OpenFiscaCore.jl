@@ -103,7 +103,7 @@ calculate(simulation::Simulation, variable_name; accept_other_period = false) = 
   simulation.period, accept_other_period = accept_other_period)
 
 
-function divide_calculate(simulation::Simulation, variable_name, period)
+function calculate_add(simulation::Simulation, variable_name, period)
   if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
     variable_name_at_period = NameAtPeriod(variable_name, period)
     calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
@@ -111,10 +111,39 @@ function divide_calculate(simulation::Simulation, variable_name, period)
       push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
     end
   end
-  return divide_calculate(get_variable!(simulation, variable_name), period)
+  return calculate_add(get_variable!(simulation, variable_name), period)
 end
 
-divide_calculate(simulation::Simulation, variable_name) = divide_calculate(simulation, variable_name, simulation.period)
+calculate_add(simulation::Simulation, variable_name) = calculate_add(simulation, variable_name, simulation.period)
+
+
+function calculate_add_divide(simulation::Simulation, variable_name, period)
+  if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
+    variable_name_at_period = NameAtPeriod(variable_name, period)
+    calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
+    if !(variable_name_at_period in calling_formula_input_variables_name_at_period)
+      push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
+    end
+  end
+  return calculate_add_divide(get_variable!(simulation, variable_name), period)
+end
+
+calculate_add_divide(simulation::Simulation, variable_name) = calculate_add_divide(simulation, variable_name,
+  simulation.period)
+
+
+function calculate_divide(simulation::Simulation, variable_name, period)
+  if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
+    variable_name_at_period = NameAtPeriod(variable_name, period)
+    calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
+    if !(variable_name_at_period in calling_formula_input_variables_name_at_period)
+      push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
+    end
+  end
+  return calculate_divide(get_variable!(simulation, variable_name), period)
+end
+
+calculate_divide(simulation::Simulation, variable_name) = calculate_divide(simulation, variable_name, simulation.period)
 
 
 function fill!(simulation::Simulation, scenario::Scenario)
@@ -357,20 +386,6 @@ function stringify_variables_name_at_period(simulation::Simulation, variables_na
     ],
     ", ")
 end
-
-
-function sum_calculate(simulation::Simulation, variable_name, period)
-  if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
-    variable_name_at_period = NameAtPeriod(variable_name, period)
-    calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
-    if !(variable_name_at_period in calling_formula_input_variables_name_at_period)
-      push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
-    end
-  end
-  return sum_calculate(get_variable!(simulation, variable_name), period)
-end
-
-sum_calculate(simulation::Simulation, variable_name) = sum_calculate(simulation, variable_name, simulation.period)
 
 
 variable_at(simulation::Simulation, variable_name, period, default) = variable_at(

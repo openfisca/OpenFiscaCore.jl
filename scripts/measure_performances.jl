@@ -79,7 +79,7 @@ end
 revenu_disponible = VariableDefinition("revenu_disponible", individu, Float32, label = "Revenu disponible de la famille"
 ) do simulation, variable, period
   period = YearPeriod(firstdayofyear(period.start))
-  @sum_calculate(rsa, period)
+  @calculate_add(rsa, period)
   @calculate(salaire_imposable, period)
   return period, rsa + salaire_imposable * 0.7
 end
@@ -91,7 +91,7 @@ rsa = VariableDefinition("rsa", individu, Float32, label = "RSA") do simulation,
   if date < Date(2010, 1, 1)
     array = zeros(variable)
   else
-    @divide_calculate(salaire_imposable, period)
+    @calculate_divide(salaire_imposable, period)
     if date < Date(2011, 1, 1)
       array = (salaire_imposable .< 500) * 100
     elseif date < Date(2013, 1, 1)

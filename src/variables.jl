@@ -177,14 +177,166 @@ macro calculate(variable, args...)
 end
 
 
-function default_array(variable::Variable)
-  definition = variable.definition
-  array = Array(definition.cell_type, get_entity(variable).count)
-  return fill!(array, definition.cell_default)
+function calculate_add(variable::PeriodicVariable, period::MonthPeriod)
+  cell_type = variable.definition.cell_type
+  @assert !issubtype(cell_type, Bool)
+  @assert !issubtype(cell_type, Integer)  # TODO: Remove this test, once all Python formulas work in Julia.
+  variable_at_date = variable_at(variable, period, nothing)
+  if variable_at_date !== nothing
+    return variable_at_date
+  end
+  array = zeros(variable)
+  year, month, day = yearmonthday(period.start)
+  for month_number in 1:period.length
+    month_period = MonthPeriod(Date(year, month, day))
+    variable_at_date = calculate(variable, month_period)
+    array .+= get_array(variable_at_date)
+    month += 1
+    if month > 12
+      month -= 12
+      year += 1
+    end
+  end
+  return set_array(variable, period, array)
+end
+
+function calculate_add(variable::PeriodicVariable, period::YearPeriod)
+  cell_type = variable.definition.cell_type
+  @assert !issubtype(cell_type, Bool)
+  variable_at_date = variable_at(variable, period, nothing)
+  if variable_at_date !== nothing
+    return variable_at_date
+  end
+  array = zeros(variable)
+  year, month, day = yearmonthday(period.start)
+  for year_number in 1:period.length
+    for month_number in 1:12
+      month_period = MonthPeriod(Date(year, month, day))
+      variable_at_date = calculate(variable, month_period)
+      array += get_array(variable_at_date)
+      month += 1
+      if month > 12
+        month -= 12
+        year += 1
+      end
+    end
+  end
+  return set_array(variable, period, array)
 end
 
 
-function divide_calculate(variable::PeriodicVariable, period::MonthPeriod)
+macro calculate_add(variable, period)
+  global simulation
+  return esc(:($variable = calculate_add(simulation, $(string(variable)), $period)))
+end
+
+
+function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
+  cell_type = variable.definition.cell_type
+  @assert !issubtype(cell_type, Bool)
+  @assert !issubtype(cell_type, Integer)
+  @assert day(period.start) == 1
+
+  variable_at_date = variable_at(variable, period, nothing)
+  if variable_at_date !== nothing
+    return variable_at_date
+  end
+
+  array = zeros(variable)
+  requested_period = period
+  stop = stop_date(period)
+  while true
+    variable_at_date = calculate(variable, requested_period, accept_other_period = true)
+    requested_start = requested_period.start
+    returned_period = variable_at_date.period
+    returned_start = returned_period.start
+    @assert day(returned_start) == 1
+    if requested_start < returned_start || stop_date(returned_period) < requested_start
+      error("Period $returned_period returned by variable $(variable.definition.name) doesn't include" *
+        " start of requested period $requested_period.")
+    end
+    requested_start_months = year(requested_start) * 12 + month(requested_start)
+    returned_start_months = year(returned_start) * 12 + month(returned_start)
+    if isa(returned_period, MonthPeriod)
+      intersection_length = min(requested_start_months + requested_period.length,
+        returned_start_months + returned_period.length) - requested_start_months
+      array .+= get_array(variable_at_date) .* intersection_length ./ returned_period.length
+    else
+      if !isa(returned_period, YearPeriod)
+        name = variable.definition.name
+        error("Requested a monthly or yearly period. Got $returned_period returned by variable" *
+          " $(variable.definition.name).")
+      end
+      intersection_length = min(requested_start_months + requested_period.length,
+        returned_start_months + 12 * returned_period.length) - requested_start_months
+      array .+= get_array(variable_at_date) .* intersection_length ./ (12 * returned_period.length)
+    end
+
+    requested_period = MonthPeriod(requested_start + Month(intersection_length),
+      requested_period.length - intersection_length)
+    if requested_period.start > stop
+      return set_array(variable, period, array)
+    end
+  end
+end
+
+function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
+  cell_type = variable.definition.cell_type
+  @assert !issubtype(cell_type, Bool)
+  @assert !issubtype(cell_type, Integer)
+  @assert day(period.start) == 1
+
+  variable_at_date = variable_at(variable, period, nothing)
+  if variable_at_date !== nothing
+    return variable_at_date
+  end
+
+  array = zeros(variable)
+  requested_period = period
+  stop = stop_date(period)
+  while true
+    variable_at_date = calculate(variable, requested_period, accept_other_period = true)
+    requested_start = requested_period.start
+    returned_period = variable_at_date.period
+    returned_start = returned_period.start
+    @assert day(returned_start) == 1
+    if requested_start < returned_start || stop_date(returned_period) < requested_start
+      error("Period $returned_period returned by variable $(variable.definition.name) doesn't include" *
+        " start of requested period $requested_period.")
+    end
+    requested_start_months = year(requested_start) * 12 + month(requested_start)
+    returned_start_months = year(returned_start) * 12 + month(returned_start)
+    if isa(returned_period, MonthPeriod)
+      intersection_length = min(requested_start_months + requested_period.length * 12,
+        returned_start_months + returned_period.length) - requested_start_months
+      array .+= get_array(variable_at_date) .* intersection_length ./ returned_period.length
+    else
+      if !isa(returned_period, YearPeriod)
+        name = variable.definition.name
+        error("Requested a monthly or yearly period. Got $returned_period returned by variable" *
+          " $(variable.definition.name).")
+      end
+      intersection_length = min(requested_start_months + requested_period.length * 12,
+        returned_start_months + returned_period.length * 12) - requested_start_months
+      array .+= get_array(variable_at_date) .* intersection_length ./ (returned_period.length * 12)
+    end
+
+    requested_period = YearPeriod(requested_start + Month(intersection_length),
+      int(ceil((requested_period.length - intersection_length) / 12)))
+    if requested_period.start > stop
+      return set_array(variable, period, array)
+    end
+  end
+end
+
+
+macro calculate_add_divide(variable, period)
+  global simulation
+  return esc(:($variable = calculate_add_divide(simulation, $(string(variable)), $period)))
+end
+
+
+function calculate_divide(variable::PeriodicVariable, period::MonthPeriod)
   cell_type = variable.definition.cell_type
   @assert !issubtype(cell_type, Bool)
   @assert !issubtype(cell_type, Integer)
@@ -194,26 +346,34 @@ function divide_calculate(variable::PeriodicVariable, period::MonthPeriod)
   end
   variable_at_date = calculate(variable, period, accept_other_period = true)
   if period.start < variable_at_date.period.start || stop_date(variable_at_date.period) < stop_date(period)
-    error("Requested period $(variable_at_date.period) returned by variable $(variable.definition.name) doesn't include"
-      * " requested period $period.")
+    error("Period $(variable_at_date.period) returned by variable $(variable.definition.name) doesn't include" *
+      " requested period $period.")
   end
   if isa(variable_at_date.period, MonthPeriod)
     return set_array(variable, period, get_array(variable_at_date) .* period.length ./ variable_at_date.period.length)
   else
     if !isa(variable_at_date.period, YearPeriod)
-      error("Requested a year period. Got $(variable_at_date.period) returned by variable $(variable.definition.name).")
+      name = variable.definition.name
+      error("Requested a monthly or yearly period. Got $(variable_at_date.period) returned by variable $(name).")
     end
     return set_array(variable, period, get_array(variable_at_date) .* period.length
       ./ (12 * variable_at_date.period.length))
   end
 end
 
-divide_calculate(variable::PeriodicVariable, period::YearPeriod) = calculate(variable, period)
+calculate_divide(variable::PeriodicVariable, period::YearPeriod) = calculate(variable, period)
 
 
-macro divide_calculate(variable, period)
+macro calculate_divide(variable, period)
   global simulation
-  return esc(:($variable = divide_calculate(simulation, $(string(variable)), $period)))
+  return esc(:($variable = calculate_divide(simulation, $(string(variable)), $period)))
+end
+
+
+function default_array(variable::Variable)
+  definition = variable.definition
+  array = Array(definition.cell_type, get_entity(variable).count)
+  return fill!(array, definition.cell_default)
 end
 
 
@@ -429,60 +589,6 @@ split_person_by_role(array_handle::VariableAtPeriod, entity::Entity, roles::Arra
 
 split_person_by_role(array_handle::VariableAtPeriod, entity::Entity) = split_person_by_role(array_handle, entity,
   array_handle.period, ALL_ROLES)
-
-
-function sum_calculate(variable::PeriodicVariable, period::MonthPeriod)
-  cell_type = variable.definition.cell_type
-  @assert !issubtype(cell_type, Bool)
-  @assert !issubtype(cell_type, Integer)  # TODO: Remove this test, once all Python formulas work in Julia.
-  variable_at_date = variable_at(variable, period, nothing)
-  if variable_at_date !== nothing
-    return variable_at_date
-  end
-  array = zeros(variable)
-  year, month, day = yearmonthday(period.start)
-  for month_number in 1:period.length
-    month_period = MonthPeriod(Date(year, month, day))
-    variable_at_date = calculate(variable, month_period)
-    array += get_array(variable_at_date)
-    month += 1
-    if month > 12
-      month -= 12
-      year += 1
-    end
-  end
-  return set_array(variable, period, array)
-end
-
-function sum_calculate(variable::PeriodicVariable, period::YearPeriod)
-  cell_type = variable.definition.cell_type
-  @assert !issubtype(cell_type, Bool)
-  variable_at_date = variable_at(variable, period, nothing)
-  if variable_at_date !== nothing
-    return variable_at_date
-  end
-  array = zeros(variable)
-  year, month, day = yearmonthday(period.start)
-  for year_number in 1:period.length
-    for month_number in 1:12
-      month_period = MonthPeriod(Date(year, month, day))
-      variable_at_date = calculate(variable, month_period)
-      array += get_array(variable_at_date)
-      month += 1
-      if month > 12
-        month -= 12
-        year += 1
-      end
-    end
-  end
-  return set_array(variable, period, array)
-end
-
-
-macro sum_calculate(variable, period)
-  global simulation
-  return esc(:($variable = sum_calculate(simulation, $(string(variable)), $period)))
-end
 
 
 function sum_person_in_entity(array_handle::ArrayHandle, entity::Entity, period::DatePeriod, roles::Array{Role})
