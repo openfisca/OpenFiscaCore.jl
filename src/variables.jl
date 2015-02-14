@@ -268,7 +268,6 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
       array .+= get_array(variable_at_period) .* intersection_length ./ returned_period.length
     else
       if !isa(returned_period, YearPeriod)
-        name = variable.definition.name
         error("Requested a monthly or yearly period. Got $returned_period returned by variable" *
           " $(variable.definition.name).")
       end
@@ -317,7 +316,6 @@ function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
       array .+= get_array(variable_at_period) .* intersection_length ./ returned_period.length
     else
       if !isa(returned_period, YearPeriod)
-        name = variable.definition.name
         error("Requested a monthly or yearly period. Got $returned_period returned by variable" *
           " $(variable.definition.name).")
       end
@@ -361,8 +359,8 @@ function calculate_divide(variable::PeriodicVariable, period::MonthPeriod)
       get_array(variable_at_period) .* period.length ./ variable_at_period.period.length)
   else
     if !isa(variable_at_period.period, YearPeriod)
-      name = variable.definition.name
-      error("Requested a monthly or yearly period. Got $(variable_at_period.period) returned by variable $(name).")
+      error("Requested a monthly or yearly period. Got $(variable_at_period.period) returned by variable" *
+        " $(variable.definition.name).")
     end
     return set_array(variable, period, get_array(variable_at_period) .* period.length
       ./ (12 * variable_at_period.period.length))
