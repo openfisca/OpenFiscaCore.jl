@@ -254,6 +254,10 @@ end
 isfinite(::Period) = true
 
 
+next(period::DatePeriod) = period + unit_type(period)(period.length)
+"""Return the next contigous period of the same unit and the same length."""
+
+
 function period(unit::String, start::(Int...), size = nothing)
   if size === nothing
     if length(start) == 1
