@@ -73,6 +73,7 @@ end
 
 
 function to_cell(variable_definition::VariableDefinition)
+  value_at_date_to_cell = variable_definition.value_at_date_to_cell(variable_definition)
   return convertible::Convertible -> condition(
     test_isa(Dict),
     pipe(
@@ -82,10 +83,10 @@ function to_cell(variable_definition::VariableDefinition)
           to_period,
           require,
         ),
-        variable_definition.value_at_date_to_cell(variable_definition),
+        value_at_date_to_cell,
       ),
     ),
-    variable_definition.value_at_date_to_cell(variable_definition),
+    value_at_date_to_cell,
   )(convertible)
 end
 
