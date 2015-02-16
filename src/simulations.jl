@@ -80,6 +80,9 @@ function Simulation(scenario::Scenario; debug = false, debug_all = false, trace 
     trace = trace,
   )
   fill!(simulation, scenario)
+  for entity in values(simulation.entity_by_name)
+    @assert(entity.count > 0, "Entity $(entity.definition.name) has no member.")
+  end
   return simulation
 end
 
