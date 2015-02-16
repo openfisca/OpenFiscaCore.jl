@@ -456,9 +456,7 @@ end
 
 function get_array(variable::PermanentVariable)
   array = get_array(variable, nothing)
-  if array === nothing
-    throw(KeyError(period))
-  end
+  @assert(array !== nothing, "Permanent variable $(variable.definition.name) has an uninitialized array.")
   return array
 end
 
