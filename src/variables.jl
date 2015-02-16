@@ -647,8 +647,7 @@ variable_at(variable::PermanentVariable, period::DatePeriod, default) = variable
 variable_at(variable::PeriodicVariable, default) = variable_at(variable, variable.simulation.period, default)
 
 function variable_at(variable::PermanentVariable, default)
-  array = variable.array
-  return isempty(array) ? default : variable
+  return isempty(variable.array) ? default : variable
 end
 
 function variable_at(variable::PeriodicVariable, period::DatePeriod)
