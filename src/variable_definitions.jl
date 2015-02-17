@@ -133,8 +133,8 @@ end
 
 function value_at_date_to_floating_point(variable_definition::VariableDefinition)
   return convertible::Convertible -> pipe(
-    test_isa(Real),
-    to_float,
+    test_isa(Union(Real, String)),  # Type String is used for numerical expressions like 1.0 - 0.2 * 3.
+    to_float(accept_expression = true),
   )(convertible)
 end
 
@@ -148,8 +148,8 @@ function value_at_date_to_integer(variable_definition::VariableDefinition)
         call(label -> variable_definition.values[label]),
       ),
     ),
-    test_isa(Real),
-    to_int,
+    test_isa(Union(Real, String)),  # Type String is used for numerical expressions like 1 - 2 * 3.
+    to_int(accept_expression = true),
 #     test_between(typemin(Int32), typemax(Int32)),
 #     call(value -> convert(Int32, value)),
   )(convertible)
