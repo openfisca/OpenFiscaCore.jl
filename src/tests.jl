@@ -143,7 +143,7 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
         entity_definition = variable_definition.entity_definition
         entity_name_plural = entity_definition.name_plural
         entity_members = test_case[entity_name_plural]
-        entity_member = first(values(entity_members))
+        entity_member = first(entity_members)
         existing_value = get(entity_member, variable_name, nothing)
         if existing_value !== nothing
           error_by_variable_name[variable_name] = N_("Input variable can't override an existing value in entity.")

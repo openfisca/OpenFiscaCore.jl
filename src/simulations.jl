@@ -161,8 +161,8 @@ function fill!(simulation::Simulation, scenario::Scenario)
   end
 
   person_index_by_id = [
-    person_id => person_index
-    for (person_index, person_id) in enumerate(keys(test_case[person_plural]))
+    person["id"] => person_index
+    for (person_index, person) in enumerate(test_case[person_plural])
   ]
 
   for entity in values(simulation.entity_by_name)
@@ -179,7 +179,7 @@ function fill!(simulation::Simulation, scenario::Scenario)
     role_array = get_array!(role_variable, simulation.period) do
       return Array(role_variable.definition.cell_type, person.count)
     end
-    for (member_index, member) in enumerate(values(test_case[entity_plural]))
+    for (member_index, member) in enumerate(test_case[entity_plural])
       for (person_id, person_role) in entity.definition.each_person_id_and_role(member)
         person_index = person_index_by_id[person_id]
         for step_index in 1:scenario_steps_count
@@ -199,7 +199,7 @@ function fill!(simulation::Simulation, scenario::Scenario)
         return value !== nothing && !(key in (entity.definition.index_variable_name,
           entity.definition.role_variable_name))
       end))
-      for member in values(test_case[entity_plural])
+      for member in test_case[entity_plural]
     ]...))
     for (variable_name, variable_definition) in variable_definition_by_name
       if variable_definition.entity_definition !== entity.definition || !(variable_name in allowed_variables_name)
@@ -207,7 +207,7 @@ function fill!(simulation::Simulation, scenario::Scenario)
       end
 
       variable_periods = Set{DatePeriod}()
-      for member in values(test_case[entity_plural])
+      for member in test_case[entity_plural]
         cell = get(member, variable_name, nothing)
         if isa(cell, Union(Dict, OrderedDict))
           if any(value -> value !== nothing, values(cell))
@@ -220,7 +220,7 @@ function fill!(simulation::Simulation, scenario::Scenario)
 
       variable = get_variable!(entity, variable_name)
       for variable_period in variable_periods
-        variable_values = map(values(test_case[entity_plural])) do member
+        variable_values = map(test_case[entity_plural]) do member
           cell = get(member, variable_name, nothing)
           cell_at_period = isa(cell, Union(Dict, OrderedDict)) ?
             get(cell, variable_period, nothing) :

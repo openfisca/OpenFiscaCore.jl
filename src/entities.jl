@@ -108,23 +108,6 @@ function add_member(entity; args...)
 end
 
 
-entities_to_entity_by_id(convertible::Convertible) = pipe(
-  test_isa(Array),
-  uniform_sequence(
-    test_isa(Union(Dict, OrderedDict)),
-    drop_nothing = true,
-  ),
-  call(values -> begin
-    value_by_name = OrderedDict(String, Any)
-    for (index, value) in enumerate(values)
-      id = pop!(value, "id", string(index))
-      value_by_name[id] = value
-    end
-    return value_by_name
-  end),
-)(convertible)
-
-
 get_index_variable(entity::Entity) = get_variable!(entity.simulation, entity.definition.index_variable_name)
 
 
