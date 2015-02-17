@@ -61,7 +61,7 @@ end
 function set_entities_json_id(entities_json)
   for (index, entity_json) in enumerate(entities_json)
     if !haskey(entity_json, "id")
-      entity_json["id"] = index
+      entity_json["id"] = string(index)
     end
   end
   return entities_json
