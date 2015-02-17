@@ -58,6 +58,16 @@ function print(io::IO, scenario::Scenario, indent = 0)
 end
 
 
+function set_entities_json_id(entities_json)
+  for (index, entity_json) in enumerate(entities_json)
+    if !haskey(entity_json, "id")
+      entity_json["id"] = index
+    end
+  end
+  return entities_json
+end
+
+
 function steps_count(scenario::Scenario)
   count = 1
   if scenario.axes !== nothing
