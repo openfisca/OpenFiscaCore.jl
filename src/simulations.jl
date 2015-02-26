@@ -297,6 +297,9 @@ get_entity(simulation::Simulation, name::String) = simulation.entity_by_name[nam
 get_person(simulation::Simulation) = get_entity(simulation, simulation.tax_benefit_system.person_name)
 
 
+get_variable(simulation::Simulation, variable_name::String) = simulation.variable_by_name[variable_name]
+
+
 function get_variable!(simulation::Simulation, variable_name::String)
   return get!(simulation.variable_by_name, variable_name) do
     definition = simulation.tax_benefit_system.variable_definition_by_name[variable_name]
