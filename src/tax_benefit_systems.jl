@@ -81,4 +81,6 @@ function legislation_at(tax_benefit_system::TaxBenefitSystem, date::Date; refere
 end
 
 
+import Base: show
+
 show(io::IO, tax_benefit_system::TaxBenefitSystem) = show(io, "$(typeof(tax_benefit_system))()")

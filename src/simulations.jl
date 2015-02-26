@@ -343,7 +343,10 @@ function permanent_default_value(simulation::Simulation, variable::PermanentVari
 end
 
 
-show(io::IO, simulation::Simulation) = show(io, "$(typeof(simulation))(tax_benefit_system, $(simulation.period))")
+import Base: show
+
+show(io::IO, simulation::Simulation) = show(io,
+  "$(typeof(simulation))($(simulation.tax_benefit_system), $(simulation.period))")
 
 
 function requested_period_default_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
