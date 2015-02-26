@@ -53,11 +53,6 @@ function cleanup_period_item(convertible::Convertible)
 end
 
 
-function print(io::IO, scenario::Scenario, indent = 0)
-  print(io, "Scenario(tax_benefit_system, $(scenario.period), $(scenario.test_case), $(scenario.axes))")
-end
-
-
 function set_entities_json_id(entities_json)
   for (index, entity_json) in enumerate(entities_json)
     if !haskey(entity_json, "id")

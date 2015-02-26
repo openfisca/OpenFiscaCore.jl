@@ -79,3 +79,6 @@ function legislation_at(tax_benefit_system::TaxBenefitSystem, date::Date; refere
     return legislation_at(tax_benefit_system.legislation, date)
   end
 end
+
+
+show(io::IO, tax_benefit_system::TaxBenefitSystem) = show(io, "$(typeof(tax_benefit_system))()")

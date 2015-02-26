@@ -487,12 +487,12 @@ get_variable(variable_at_period::VariableAtPeriod) = variable_at_period.variable
 get_variable(variable::PermanentVariable) = variable
 
 
-print(io::IO, variable::PermanentVariable, indent = 0) = print(io,
-  "PermanentVariable($(variable.definition.name), $(variable.array))")
+show(io::IO, variable::PermanentVariable) = show(io,
+  "$(typeof(variable))($(variable.definition.name), $(variable.array))")
 
-function print(io::IO, variable_at_period::VariableAtPeriod, indent = 0)
+function show(io::IO, variable_at_period::VariableAtPeriod)
   name = variable_at_period.variable.definition.name
-  print(io, "VariableAtPeriod($name, $(variable_at_period.period), $(get_array(variable_at_period)))")
+  show(io, "$(typeof(variable_at_period))($name, $(variable_at_period.period), $(get_array(variable_at_period)))")
 end
 
 

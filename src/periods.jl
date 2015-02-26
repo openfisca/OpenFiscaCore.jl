@@ -305,24 +305,20 @@ period(value::Int) = YearPeriod(value)
 period(value) = Convertible(value) |> to_period |> to_value
 
 
-function print(io::IO, period::DayPeriod)
-  print(io, string(period.start, (length > 1 ? string(":", period.length) : "")))
-end
+show(io::IO, period::DayPeriod) = show(io, string(period.start, (length > 1 ? string(":", period.length) : "")))
 
-function print(io::IO, period::EmptyPeriod)
-  print(io, "$(typeof(period))()")
-end
+show(io::IO, period::EmptyPeriod) = show(io, "$(typeof(period))()")
 
-function print(io::IO, period::MonthPeriod)
+function show(io::IO, period::MonthPeriod)
   year, month, day = yearmonthday(period.start)
-  print(io,
+  show(io,
     string((day > 1 ? string("month:", period.start) : string(year, "-", month)),
       (period.length > 1 ? string(":", period.length) : "")))
 end
 
-function print(io::IO, period::YearPeriod)
+function show(io::IO, period::YearPeriod)
   year, month, day = yearmonthday(period.start)
-  print(io,
+  show(io,
     string((month > 1 || day > 1 ? string("year:", year, "-", month, (day > 1 ? string("-", day) : "")) : string(year)),
       (period.length > 1 ? string(":", period.length) : "")))
 end
