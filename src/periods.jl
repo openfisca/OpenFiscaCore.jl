@@ -305,25 +305,6 @@ period(value::Int) = YearPeriod(value)
 period(value) = Convertible(value) |> to_period |> to_value
 
 
-show(io::IO, period::DayPeriod) = show(io, string(period.start, (length > 1 ? string(":", period.length) : "")))
-
-show(io::IO, period::EmptyPeriod) = show(io, "$(typeof(period))()")
-
-function show(io::IO, period::MonthPeriod)
-  year, month, day = yearmonthday(period.start)
-  show(io,
-    string((day > 1 ? string("month:", period.start) : string(year, "-", month)),
-      (period.length > 1 ? string(":", period.length) : "")))
-end
-
-function show(io::IO, period::YearPeriod)
-  year, month, day = yearmonthday(period.start)
-  show(io,
-    string((month > 1 || day > 1 ? string("year:", year, "-", month, (day > 1 ? string("-", day) : "")) : string(year)),
-      (period.length > 1 ? string(":", period.length) : "")))
-end
-
-
 real(period::Period) = real(period.value)
 
 
@@ -332,6 +313,23 @@ stop_date(period::DayPeriod) = period.start + Day(period.length - 1)
 stop_date(period::MonthPeriod) = period.start + Month(period.length) - Day(1)
 
 stop_date(period::YearPeriod) = period.start + Year(period.length) - Day(1)
+
+
+import Base: string
+
+string(period::DayPeriod) = string(period.start, (period.length > 1 ? string(":", period.length) : ""))
+
+function string(period::MonthPeriod)
+  year, month, day = yearmonthday(period.start)
+  string((day > 1 ? string("month:", period.start) : string(year, "-", month)),
+    (period.length > 1 ? string(":", period.length) : ""))
+end
+
+function string(period::YearPeriod)
+  year, month, day = yearmonthday(period.start)
+  string((month > 1 || day > 1 ? string("year:", year, "-", month, (day > 1 ? string("-", day) : "")) : string(year)),
+    (period.length > 1 ? string(":", period.length) : ""))
+end
 
 
 """Return a converter that creates a period from a Julia or JSON object."""
