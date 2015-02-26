@@ -27,6 +27,7 @@ type VariableDefinition
   cell_type::Type
   cell_format
   cell_default
+  cell_to_value_at_period_json::Function
   cerfa_field
   input_variable::Bool
   label::String
@@ -34,13 +35,13 @@ type VariableDefinition
   start_date
   stop_date
   url
-  value_at_date_to_cell::Function
+  value_at_period_to_cell::Function
   values
 
   function VariableDefinition(formula, name::String, entity_definition::EntityDefinition, cell_type;
-      cell_default = nothing, cell_format = nothing, cerfa_field = nothing, input_variable = false, label = name,
-      permanent = false, start_date = nothing, stop_date = nothing, url = nothing, value_at_date_to_cell = nothing,
-      values = nothing)
+      cell_default = nothing, cell_format = nothing, cell_to_value_at_period_json = nothing, cerfa_field = nothing,
+      input_variable = false, label = name, permanent = false, start_date = nothing, stop_date = nothing, url = nothing,
+      value_at_period_to_cell = nothing, values = nothing)
     if cell_default === nothing
       cell_default =
         cell_type <: Bool ? false :
@@ -53,27 +54,40 @@ type VariableDefinition
         cell_type <: Year ? 0 :
         error("Unknown default for type ", cell_type)
     end
-    if value_at_date_to_cell === nothing
-      value_at_date_to_cell =
-        cell_type <: Bool ? value_at_date_to_bool :
-        cell_type <: Date ? value_at_date_to_date :
-        cell_type <: Day ? value_at_date_to_day :
-        cell_type <: FloatingPoint ? value_at_date_to_floating_point :
-        cell_type <: Integer ? value_at_date_to_integer :
-        cell_type <: Month ? value_at_date_to_month :
-        cell_type <: Role ? value_at_date_to_role :
-        cell_type <: String ? value_at_date_to_string :
-        cell_type <: Year ? value_at_date_to_year :
-        error("Unknown converter value_at_date_to_cell for type ", cell_type)
+    if cell_to_value_at_period_json === nothing
+      cell_to_value_at_period_json =
+        cell_type <: Bool ? identity :
+        cell_type <: Date ? string :
+        cell_type <: Day ? int :
+        cell_type <: FloatingPoint ? identity :
+        cell_type <: Integer ? identity :
+        cell_type <: Month ? int :
+        cell_type <: Role ? int :
+        cell_type <: String ? identity :
+        cell_type <: Year ? int :
+        error("Unknown function cell_to_value_at_period_json for type ", cell_type)
     end
-    return new(formula, name, entity_definition, cell_type, cell_format, cell_default, cerfa_field, input_variable,
-      label, permanent, start_date, stop_date, url, value_at_date_to_cell, values)
+    if value_at_period_to_cell === nothing
+      value_at_period_to_cell =
+        cell_type <: Bool ? value_at_period_to_bool :
+        cell_type <: Date ? value_at_period_to_date :
+        cell_type <: Day ? value_at_period_to_day :
+        cell_type <: FloatingPoint ? value_at_period_to_floating_point :
+        cell_type <: Integer ? value_at_period_to_integer :
+        cell_type <: Month ? value_at_period_to_month :
+        cell_type <: Role ? value_at_period_to_role :
+        cell_type <: String ? value_at_period_to_string :
+        cell_type <: Year ? value_at_period_to_year :
+        error("Unknown converter value_at_period_to_cell for type ", cell_type)
+    end
+    return new(formula, name, entity_definition, cell_type, cell_format, cell_default, cell_to_value_at_period_json,
+      cerfa_field, input_variable, label, permanent, start_date, stop_date, url, value_at_period_to_cell, values)
   end
 end
 
 
 function to_cell(variable_definition::VariableDefinition)
-  value_at_date_to_cell = variable_definition.value_at_date_to_cell(variable_definition)
+  value_at_period_to_cell = variable_definition.value_at_period_to_cell(variable_definition)
   return convertible::Convertible -> condition(
     test_isa(Dict),
     pipe(
@@ -83,15 +97,15 @@ function to_cell(variable_definition::VariableDefinition)
           to_period,
           require,
         ),
-        value_at_date_to_cell,
+        value_at_period_to_cell,
       ),
     ),
-    value_at_date_to_cell,
+    value_at_period_to_cell,
   )(convertible)
 end
 
 
-function value_at_date_to_bool(variable_definition::VariableDefinition)
+function value_at_period_to_bool(variable_definition::VariableDefinition)
   return convertible::Convertible -> pipe(
     test_isa(Union(Bool, Int, String)),
     guess_bool,
@@ -99,7 +113,7 @@ function value_at_date_to_bool(variable_definition::VariableDefinition)
 end
 
 
-function value_at_date_to_date(variable_definition::VariableDefinition)
+function value_at_period_to_date(variable_definition::VariableDefinition)
   return convertible::Convertible -> pipe(
     condition(
       # test_isa(Date),
@@ -119,19 +133,19 @@ function value_at_date_to_date(variable_definition::VariableDefinition)
 end
 
 
-function value_at_date_to_day(variable_definition::VariableDefinition)
+function value_at_period_to_day(variable_definition::VariableDefinition)
   return convertible::Convertible -> condition(
     test_isa(Day),
     noop,
     pipe(
-      value_at_date_to_integer(variable_definition),
+      value_at_period_to_integer(variable_definition),
       call(value -> Day(value)),
     ),
   )(convertible)
 end
 
 
-function value_at_date_to_floating_point(variable_definition::VariableDefinition)
+function value_at_period_to_floating_point(variable_definition::VariableDefinition)
   return convertible::Convertible -> pipe(
     test_isa(Union(Real, String)),  # Type String is used for numerical expressions like 1.0 - 0.2 * 3.
     to_float(accept_expression = true),
@@ -139,7 +153,7 @@ function value_at_date_to_floating_point(variable_definition::VariableDefinition
 end
 
 
-function value_at_date_to_integer(variable_definition::VariableDefinition)
+function value_at_period_to_integer(variable_definition::VariableDefinition)
   return convertible::Convertible -> pipe(
     variable_definition.values === nothing ? noop : condition(
       test_isa(String),
@@ -156,31 +170,31 @@ function value_at_date_to_integer(variable_definition::VariableDefinition)
 end
 
 
-function value_at_date_to_month(variable_definition::VariableDefinition)
+function value_at_period_to_month(variable_definition::VariableDefinition)
   return convertible::Convertible -> condition(
     test_isa(Month),
     noop,
     pipe(
-      value_at_date_to_integer(variable_definition),
+      value_at_period_to_integer(variable_definition),
       call(value -> Month(value)),
     ),
   )(convertible)
 end
 
 
-function value_at_date_to_role(variable_definition::VariableDefinition)
+function value_at_period_to_role(variable_definition::VariableDefinition)
   return convertible::Convertible -> condition(
     test_isa(Role),
     noop,
     pipe(
-      value_at_date_to_integer(variable_definition),
+      value_at_period_to_integer(variable_definition),
       call(value -> Role(value)),
     ),
   )(convertible)
 end
 
 
-function value_at_date_to_string(variable_definition::VariableDefinition)
+function value_at_period_to_string(variable_definition::VariableDefinition)
   return convertible::Convertible -> condition(
     test_isa(Real),
     call(string),
@@ -191,12 +205,12 @@ function value_at_date_to_string(variable_definition::VariableDefinition)
 end
 
 
-function value_at_date_to_year(variable_definition::VariableDefinition)
+function value_at_period_to_year(variable_definition::VariableDefinition)
   return convertible::Convertible -> condition(
     test_isa(Year),
     noop,
     pipe(
-      value_at_date_to_integer(variable_definition),
+      value_at_period_to_integer(variable_definition),
       call(value -> Year(value)),
     ),
   )(convertible)
