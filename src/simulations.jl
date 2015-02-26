@@ -91,7 +91,7 @@ Simulation(tax_benefit_system::TaxBenefitSystem, period::DatePeriod; debug = fal
   trace = trace)
 
 
-function calculate(simulation::Simulation, variable_name, period; accept_other_period = false)
+function calculate(simulation::Simulation, variable_name::String, period; accept_other_period = false)
   if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
     variable_name_at_period = NameAtPeriod(variable_name, period)
     calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
@@ -102,11 +102,11 @@ function calculate(simulation::Simulation, variable_name, period; accept_other_p
   return calculate(get_variable!(simulation, variable_name), period, accept_other_period = accept_other_period)
 end
 
-calculate(simulation::Simulation, variable_name; accept_other_period = false) = calculate(simulation, variable_name,
+calculate(simulation::Simulation, variable_name::String; accept_other_period = false) = calculate(simulation, variable_name,
   simulation.period, accept_other_period = accept_other_period)
 
 
-function calculate_add(simulation::Simulation, variable_name, period)
+function calculate_add(simulation::Simulation, variable_name::String, period)
   if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
     variable_name_at_period = NameAtPeriod(variable_name, period)
     calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
@@ -117,10 +117,10 @@ function calculate_add(simulation::Simulation, variable_name, period)
   return calculate_add(get_variable!(simulation, variable_name), period)
 end
 
-calculate_add(simulation::Simulation, variable_name) = calculate_add(simulation, variable_name, simulation.period)
+calculate_add(simulation::Simulation, variable_name::String) = calculate_add(simulation, variable_name, simulation.period)
 
 
-function calculate_add_divide(simulation::Simulation, variable_name, period)
+function calculate_add_divide(simulation::Simulation, variable_name::String, period)
   if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
     variable_name_at_period = NameAtPeriod(variable_name, period)
     calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
@@ -131,11 +131,11 @@ function calculate_add_divide(simulation::Simulation, variable_name, period)
   return calculate_add_divide(get_variable!(simulation, variable_name), period)
 end
 
-calculate_add_divide(simulation::Simulation, variable_name) = calculate_add_divide(simulation, variable_name,
+calculate_add_divide(simulation::Simulation, variable_name::String) = calculate_add_divide(simulation, variable_name,
   simulation.period)
 
 
-function calculate_divide(simulation::Simulation, variable_name, period)
+function calculate_divide(simulation::Simulation, variable_name::String, period)
   if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
     variable_name_at_period = NameAtPeriod(variable_name, period)
     calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
@@ -146,7 +146,7 @@ function calculate_divide(simulation::Simulation, variable_name, period)
   return calculate_divide(get_variable!(simulation, variable_name), period)
 end
 
-calculate_divide(simulation::Simulation, variable_name) = calculate_divide(simulation, variable_name, simulation.period)
+calculate_divide(simulation::Simulation, variable_name::String) = calculate_divide(simulation, variable_name, simulation.period)
 
 
 function fill!(simulation::Simulation, scenario::Scenario)
@@ -297,7 +297,7 @@ get_entity(simulation::Simulation, name::String) = simulation.entity_by_name[nam
 get_person(simulation::Simulation) = get_entity(simulation, simulation.tax_benefit_system.person_name)
 
 
-function get_variable!(simulation::Simulation, variable_name)
+function get_variable!(simulation::Simulation, variable_name::String)
   return get!(simulation.variable_by_name, variable_name) do
     definition = simulation.tax_benefit_system.variable_definition_by_name[variable_name]
     return (definition.permanent ? ConcretePermanentVariable : ConcretePeriodicVariable)(simulation, definition)
@@ -363,13 +363,13 @@ function requested_period_last_value(simulation::Simulation, variable::PeriodicV
 end
 
 
-set_array(simulation::Simulation, variable_name, period::DatePeriod, array::Array) = set_array(
+set_array(simulation::Simulation, variable_name::String, period::DatePeriod, array::Array) = set_array(
   get_variable!(simulation, variable_name), period, array)
 
-set_array(simulation::Simulation, variable_name, array_handle::VariableAtPeriodOrPermanent) = set_array(
+set_array(simulation::Simulation, variable_name::String, array_handle::VariableAtPeriodOrPermanent) = set_array(
   get_variable!(simulation, variable_name), array_handle)
 
-set_array(simulation::Simulation, variable_name, array::Array) = set_array(
+set_array(simulation::Simulation, variable_name::String, array::Array) = set_array(
   get_variable!(simulation, variable_name), array)
 
 
@@ -389,8 +389,8 @@ function stringify_variables_name_at_period(simulation::Simulation, variables_na
 end
 
 
-variable_at(simulation::Simulation, variable_name, period, default) = variable_at(
+variable_at(simulation::Simulation, variable_name::String, period, default) = variable_at(
   get_variable!(simulation, variable_name), period, default)
 
-variable_at(simulation::Simulation, variable_name, default) = get_array(get_variable!(simulation, variable_name),
+variable_at(simulation::Simulation, variable_name::String, default) = get_array(get_variable!(simulation, variable_name),
   default)
