@@ -337,7 +337,7 @@ legislation_at(simulation::Simulation, date::Date; reference = false) = (referen
 
 
 function missing_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
-  error("Missing value for variable $(variable.definition.name) at $(period)")
+  error("Missing value for variable $(variable.definition.name) at $(string(period))")
 end
 
 
@@ -347,7 +347,7 @@ end
 
 
 Base.show(io::IO, simulation::Simulation) = print(io,
-  "$(typeof(simulation))($(simulation.tax_benefit_system), $(simulation.period))")
+  "$(typeof(simulation))($(simulation.tax_benefit_system), $(string(simulation.period)))")
 
 
 function requested_period_default_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
@@ -382,7 +382,7 @@ function stringify_variables_name_at_period(simulation::Simulation, variables_na
   # returned for a period different from the requested period.
   return join(
     String[
-      "$(variable.definition.name)@$(get_entity(variable).definition.name)<$period>" *
+      "$(variable.definition.name)@$(get_entity(variable).definition.name)<$(string(period))>" *
         "$(get_array(variable, period, nothing))"
       for (variable, period) in [
         (simulation.variable_by_name[variable_name_at_period.name], variable_name_at_period.period)

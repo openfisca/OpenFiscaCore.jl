@@ -113,13 +113,14 @@ function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_
         ])
       end
       if debug && (debug_all || !has_only_default_input_variables)
-        info("<=> $(definition.name)@$(get_entity(variable).definition.name)<$period>"
+        info("<=> $(definition.name)@$(get_entity(variable).definition.name)<$(string(period))>"
           * "($(stringify_variables_name_at_period(simulation, formula_input.variables_name_at_period))) -->"
-          * " <$formula_period>$(get_array(array_handle))")
+          * " <$(string(formula_period))>$(get_array(array_handle))")
       end
     end
     if !accept_other_period && formula_period != period
-      error("Requested period $period differs from $formula_period returned by variable $(definition.name).")
+      error("Requested period $(string(period)) differs from $(string(formula_period)) returned by variable" *
+        " $(definition.name).")
     end
   else
     formula_period = period
@@ -256,8 +257,8 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
     returned_start = returned_period.start
     @assert day(returned_start) == 1
     if requested_start < returned_start || stop_date(returned_period) < requested_start
-      error("Period $returned_period returned by variable $(variable.definition.name) doesn't include" *
-        " start of requested period $requested_period.")
+      error("Period $(string(returned_period)) returned by variable $(variable.definition.name) doesn't include" *
+        " start of requested period $(string(requested_period)).")
     end
     requested_start_months = year(requested_start) * 12 + month(requested_start)
     returned_start_months = year(returned_start) * 12 + month(returned_start)
@@ -267,7 +268,7 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
       array .+= get_array(variable_at_period) .* intersection_length ./ returned_period.length
     else
       if !isa(returned_period, YearPeriod)
-        error("Requested a monthly or yearly period. Got $returned_period returned by variable" *
+        error("Requested a monthly or yearly period. Got $(string(returned_period)) returned by variable" *
           " $(variable.definition.name).")
       end
       intersection_length = min(requested_start_months + requested_period.length,
@@ -303,8 +304,8 @@ function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
     returned_start = returned_period.start
     @assert day(returned_start) == 1
     if requested_start < returned_start || stop_date(returned_period) < requested_start
-      error("Period $returned_period returned by variable $(variable.definition.name) doesn't include" *
-        " start of requested period $requested_period.")
+      error("Period $(string(returned_period)) returned by variable $(variable.definition.name) doesn't include" *
+        " start of requested period $(string(requested_period)).")
     end
     requested_start_months = year(requested_start) * 12 + month(requested_start)
     returned_start_months = year(returned_start) * 12 + month(returned_start)
@@ -314,7 +315,7 @@ function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
       array .+= get_array(variable_at_period) .* intersection_length ./ returned_period.length
     else
       if !isa(returned_period, YearPeriod)
-        error("Requested a monthly or yearly period. Got $returned_period returned by variable" *
+        error("Requested a monthly or yearly period. Got $(string(returned_period)) returned by variable" *
           " $(variable.definition.name).")
       end
       intersection_length = min(requested_start_months + requested_period.length * 12,
@@ -350,15 +351,15 @@ function calculate_divide(variable::PeriodicVariable, period::MonthPeriod)
 
   variable_at_period = calculate(variable, period, accept_other_period = true)
   if period.start < variable_at_period.period.start || stop_date(variable_at_period.period) < stop_date(period)
-    error("Period $(variable_at_period.period) returned by variable $(variable.definition.name) doesn't include" *
-      " requested period $period.")
+    error("Period $(string(variable_at_period.period)) returned by variable $(variable.definition.name)" *
+      " doesn't include requested period $(string(period)).")
   end
   if isa(variable_at_period.period, MonthPeriod)
     return set_array(variable, period,
       get_array(variable_at_period) .* period.length ./ variable_at_period.period.length)
   else
     if !isa(variable_at_period.period, YearPeriod)
-      error("Requested a monthly or yearly period. Got $(variable_at_period.period) returned by variable" *
+      error("Requested a monthly or yearly period. Got $(string(variable_at_period.period)) returned by variable" *
         " $(variable.definition.name).")
     end
     return set_array(variable, period, get_array(variable_at_period) .* period.length
@@ -492,7 +493,8 @@ Base.show(io::IO, variable::PermanentVariable) = print(io,
 
 function Base.show(io::IO, variable_at_period::VariableAtPeriod)
   name = variable_at_period.variable.definition.name
-  show(io, "$(typeof(variable_at_period))($name, $(variable_at_period.period), $(get_array(variable_at_period)))")
+  print(io, "$(typeof(variable_at_period))($name, $(string(variable_at_period.period)), " *
+    "$(get_array(variable_at_period)))")
 end
 
 
