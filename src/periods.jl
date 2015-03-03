@@ -285,7 +285,7 @@ function period(unit::String, start::Date, size = nothing)
   return unit_constructor(unit)(start, size)
 end
 
-period(unit::String, start::Int, size = nothing) = period(unit, (start, ), size)
+period(unit::String, start::Integer, size = nothing) = period(unit, (start, ), size)
 
 period(unit::String, start::DatePeriod, size = 1) = period(unit, start.start, size)
 
@@ -300,7 +300,7 @@ period(unit::String, start::String, size = nothing) = period(
 
 period(value::DatePeriod) = value
 
-period(value::Int) = YearPeriod(value)
+period(value::Integer) = YearPeriod(value)
 
 period(value) = Convertible(value) |> to_period |> to_value
 
