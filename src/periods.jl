@@ -315,17 +315,15 @@ stop_date(period::MonthPeriod) = period.start + Month(period.length) - Day(1)
 stop_date(period::YearPeriod) = period.start + Year(period.length) - Day(1)
 
 
-import Base: string
+Base.string(period::DayPeriod) = string(period.start, (period.length > 1 ? string(":", period.length) : ""))
 
-string(period::DayPeriod) = string(period.start, (period.length > 1 ? string(":", period.length) : ""))
-
-function string(period::MonthPeriod)
+function Base.string(period::MonthPeriod)
   year, month, day = yearmonthday(period.start)
   string((day > 1 ? string("month:", period.start) : string(year, "-", month)),
     (period.length > 1 ? string(":", period.length) : ""))
 end
 
-function string(period::YearPeriod)
+function Base.string(period::YearPeriod)
   year, month, day = yearmonthday(period.start)
   string((month > 1 || day > 1 ? string("year:", year, "-", month, (day > 1 ? string("-", day) : "")) : string(year)),
     (period.length > 1 ? string(":", period.length) : ""))

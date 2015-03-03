@@ -346,9 +346,7 @@ function permanent_default_value(simulation::Simulation, variable::PermanentVari
 end
 
 
-import Base: show
-
-show(io::IO, simulation::Simulation) = show(io,
+Base.show(io::IO, simulation::Simulation) = print(io,
   "$(typeof(simulation))($(simulation.tax_benefit_system), $(simulation.period))")
 
 

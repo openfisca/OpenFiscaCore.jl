@@ -487,12 +487,10 @@ get_variable(variable_at_period::VariableAtPeriod) = variable_at_period.variable
 get_variable(variable::PermanentVariable) = variable
 
 
-import Base: show
-
-show(io::IO, variable::PermanentVariable) = show(io,
+Base.show(io::IO, variable::PermanentVariable) = print(io,
   "$(typeof(variable))($(variable.definition.name), $(variable.array))")
 
-function show(io::IO, variable_at_period::VariableAtPeriod)
+function Base.show(io::IO, variable_at_period::VariableAtPeriod)
   name = variable_at_period.variable.definition.name
   show(io, "$(typeof(variable_at_period))($name, $(variable_at_period.period), $(get_array(variable_at_period)))")
 end

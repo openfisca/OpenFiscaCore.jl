@@ -34,7 +34,5 @@ get_array(entity_array::EntityArray) = entity_array.array
 get_entity(entity_array::EntityArray) = entity_array.entity
 
 
-import Base: show
-
-show(io::IO, variable::EntityArray) = show(io,
+Base.show(io::IO, variable::EntityArray) = print(io,
   "$(typeof(period))($(variable.entity.definition.name), $(variable.array))")
