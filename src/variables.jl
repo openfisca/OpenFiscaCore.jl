@@ -98,7 +98,7 @@ function calculate(variable::PeriodicVariable, period::DatePeriod; accept_other_
     if debug_or_trace
       push!(simulation.formulas_input_stack, FormulaInput(definition.name, period))
     end
-    formula_period, array_handle = definition.formula(simulation, variable, period)
+    formula_period, array_handle = definition.base_formula(simulation, variable, period)
     if debug_or_trace
       formula_input = pop!(simulation.formulas_input_stack)
       if !debug_all || trace
@@ -145,7 +145,7 @@ function calculate(variable::PermanentVariable)
     if debug_or_trace
       push!(simulation.formulas_input_stack, FormulaInput(definition.name))
     end
-    array_handle = definition.formula(simulation, variable)
+    array_handle = definition.base_formula(simulation, variable)
     array = get_array(array_handle)
     set_array(variable, array)
     if debug_or_trace
@@ -249,6 +249,7 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
   end
 
   array = zeros(variable)
+  remaining_period_months = period.length
   requested_period = period
   while true
     variable_at_period = calculate(variable, requested_period, accept_other_period = true)
@@ -263,24 +264,25 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
     requested_start_months = year(requested_start) * 12 + month(requested_start)
     returned_start_months = year(returned_start) * 12 + month(returned_start)
     if isa(returned_period, MonthPeriod)
-      intersection_length = min(requested_start_months + requested_period.length,
+      intersection_months = min(requested_start_months + requested_period.length,
         returned_start_months + returned_period.length) - requested_start_months
-      array .+= get_array(variable_at_period) .* intersection_length ./ returned_period.length
+      array .+= get_array(variable_at_period) .* intersection_months ./ returned_period.length
     else
       if !isa(returned_period, YearPeriod)
         error("Requested a monthly or yearly period. Got $(string(returned_period)) returned by variable" *
           " $(variable.definition.name).")
       end
-      intersection_length = min(requested_start_months + requested_period.length,
+      intersection_months = min(requested_start_months + requested_period.length,
         returned_start_months + 12 * returned_period.length) - requested_start_months
-      array .+= get_array(variable_at_period) .* intersection_length ./ (12 * returned_period.length)
+      array .+= get_array(variable_at_period) .* intersection_months ./ (12 * returned_period.length)
     end
 
-    requested_period_length = requested_period.length - intersection_length
-    if requested_period_length <= 0
+    remaining_period_months -= intersection_months
+    if remaining_period_months <= 0
       return set_array(variable, period, array)
     end
-    requested_period = MonthPeriod(requested_start + Month(intersection_length), requested_period_length)
+    requested_period_length = requested_period.length - intersection_months
+    requested_period = MonthPeriod(requested_start + Month(intersection_months), requested_period_length)
   end
 end
 
@@ -296,6 +298,7 @@ function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
   end
 
   array = zeros(variable)
+  remaining_period_months = period.length * 12
   requested_period = period
   while true
     variable_at_period = calculate(variable, requested_period, accept_other_period = true)
@@ -310,25 +313,26 @@ function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
     requested_start_months = year(requested_start) * 12 + month(requested_start)
     returned_start_months = year(returned_start) * 12 + month(returned_start)
     if isa(returned_period, MonthPeriod)
-      intersection_length = min(requested_start_months + requested_period.length * 12,
+      intersection_months = min(requested_start_months + requested_period.length * 12,
         returned_start_months + returned_period.length) - requested_start_months
-      array .+= get_array(variable_at_period) .* intersection_length ./ returned_period.length
+      array .+= get_array(variable_at_period) .* intersection_months ./ returned_period.length
     else
       if !isa(returned_period, YearPeriod)
         error("Requested a monthly or yearly period. Got $(string(returned_period)) returned by variable" *
           " $(variable.definition.name).")
       end
-      intersection_length = min(requested_start_months + requested_period.length * 12,
+      intersection_months = min(requested_start_months + requested_period.length * 12,
         returned_start_months + returned_period.length * 12) - requested_start_months
-      array .+= get_array(variable_at_period) .* intersection_length ./ (returned_period.length * 12)
+      array .+= get_array(variable_at_period) .* intersection_months ./ (returned_period.length * 12)
     end
 
     # Note: Bug with Julia 0.3.2 when int() functions are not used
-    requested_period_length = int(ceil((int(requested_period.length) - int(intersection_length)) / 12))
-    if requested_period_length <= 0
+    remaining_period_months -= intersection_months
+    if remaining_period_months <= 0
       return set_array(variable, period, array)
     end
-    requested_period = YearPeriod(requested_start + Month(intersection_length), requested_period_length)
+    requested_period_length = int(requested_period.length) - int(floor(int(intersection_months) / 12))
+    requested_period = YearPeriod(requested_start + Month(intersection_months), requested_period_length)
   end
 end
 

@@ -94,7 +94,7 @@ Simulation(tax_benefit_system::TaxBenefitSystem, period::DatePeriod; debug = fal
 function calculate(simulation::Simulation, variable_name::String, period; accept_other_period = false)
   if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
     variable_name_at_period = NameAtPeriod(variable_name, period)
-    calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
+    calling_formula_input_variables_name_at_period = simulation.formulas_input_stack[end].variables_name_at_period
     if !(variable_name_at_period in calling_formula_input_variables_name_at_period)
       push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
     end
@@ -109,7 +109,7 @@ calculate(simulation::Simulation, variable_name::String; accept_other_period = f
 function calculate_add(simulation::Simulation, variable_name::String, period)
   if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
     variable_name_at_period = NameAtPeriod(variable_name, period)
-    calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
+    calling_formula_input_variables_name_at_period = simulation.formulas_input_stack[end].variables_name_at_period
     if !(variable_name_at_period in calling_formula_input_variables_name_at_period)
       push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
     end
@@ -123,7 +123,7 @@ calculate_add(simulation::Simulation, variable_name::String) = calculate_add(sim
 function calculate_add_divide(simulation::Simulation, variable_name::String, period)
   if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
     variable_name_at_period = NameAtPeriod(variable_name, period)
-    calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
+    calling_formula_input_variables_name_at_period = simulation.formulas_input_stack[end].variables_name_at_period
     if !(variable_name_at_period in calling_formula_input_variables_name_at_period)
       push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
     end
@@ -138,7 +138,7 @@ calculate_add_divide(simulation::Simulation, variable_name::String) = calculate_
 function calculate_divide(simulation::Simulation, variable_name::String, period)
   if (simulation.debug || simulation.trace) && !isempty(simulation.formulas_input_stack)
     variable_name_at_period = NameAtPeriod(variable_name, period)
-    calling_formula_input_variables_name_at_period= simulation.formulas_input_stack[end].variables_name_at_period
+    calling_formula_input_variables_name_at_period = simulation.formulas_input_stack[end].variables_name_at_period
     if !(variable_name_at_period in calling_formula_input_variables_name_at_period)
       push!(calling_formula_input_variables_name_at_period, variable_name_at_period)
     end
@@ -147,6 +147,10 @@ function calculate_divide(simulation::Simulation, variable_name::String, period)
 end
 
 calculate_divide(simulation::Simulation, variable_name::String) = calculate_divide(simulation, variable_name, simulation.period)
+
+
+entity_to_entity_period_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod
+) = variable.definition.formula(simulation, variable, period)
 
 
 function fill!(simulation::Simulation, scenario::Scenario)
@@ -311,10 +315,14 @@ end
 function last_duration_last_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
   # This formula is used for variables that are constants between events but are period size dependent.
   # It returns the latest known value for the requested start of period but with the last period size.
+  formula = variable.definition.formula
   for last_period in sort(collect(keys(variable.array_by_period)), by = period -> period.start, rev = true)
-    if last_period.start <= period.start
+    if last_period.start <= period.start && (formula === nothing || stop_date(last_period) >= stop_date(period))
       return typeof(last_period)(period.start, last_period.length), variable.array_by_period[last_period]
     end
+  end
+  if formula !== nothing
+    return formula(simulation, variable, period)
   end
   return period, default_array(variable)
 end
@@ -337,11 +345,19 @@ legislation_at(simulation::Simulation, date::Date; reference = false) = (referen
 
 
 function missing_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
+  formula = variable.definition.formula
+  if formula !== nothing
+    return formula(simulation, variable, period)
+  end
   error("Missing value for variable $(variable.definition.name) at $(string(period))")
 end
 
 
 function permanent_default_value(simulation::Simulation, variable::PermanentVariable)
+  formula = variable.definition.formula
+  if formula !== nothing
+    return formula(simulation, variable)
+  end
   return default_array(variable)
 end
 
@@ -351,6 +367,10 @@ Base.show(io::IO, simulation::Simulation) = print(io,
 
 
 function requested_period_default_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
+  formula = variable.definition.formula
+  if formula !== nothing
+    return formula(simulation, variable, period)
+  end
   return period, default_array(variable)
 end
 
@@ -358,10 +378,14 @@ end
 function requested_period_last_value(simulation::Simulation, variable::PeriodicVariable, period::DatePeriod)
   # This formula is used for variables that are constants between events and period size independent.
   # It returns the latest known value for the requested period.
+  formula = variable.definition.formula
   for last_period in sort(collect(keys(variable.array_by_period)), by = period -> period.start, rev = true)
-    if last_period.start <= period.start
+    if last_period.start <= period.start && (formula === nothing || stop_date(last_period) >= stop_date(period))
       return period, variable.array_by_period[last_period]
     end
+  end
+  if formula !== nothing
+    return formula(simulation, variable, period)
   end
   return period, default_array(variable)
 end

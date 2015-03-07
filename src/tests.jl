@@ -36,7 +36,7 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
           to_bool,
         ),
         "input_variables" => pipe(
-          test_isa(Dict),
+          test_isa(Union(Dict, OrderedDict)),
           uniform_mapping(
             pipe(
               test_isa(String),
@@ -52,7 +52,7 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
           strip,
         ),
         "output_variables" => pipe(
-          test_isa(Dict),
+          test_isa(Union(Dict, OrderedDict)),
           uniform_mapping(
             pipe(
               test_isa(String),
@@ -65,8 +65,8 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
             if convertible.error !== nothing || convertible.value === nothing
               return convertible
             end
-            output_by_variable_name = (String => Any)[]
             error_by_variable_name = (String => Any)[]
+            output_by_variable_name = (String => Any)[]
             for (variable_name, value) in convertible.value
               variable_definition = variable_definition_by_name[variable_name]
               converted_variable = Convertible(value, convertible.context) |> to_cell(variable_definition)
@@ -85,7 +85,10 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
         "period" => to_period,
       ],
       [
-        entity_definition.name_plural => item_to_singleton
+        entity_definition.name_plural => pipe(
+          item_to_singleton,
+          test_isa(Array{Dict{String, Any}}),
+        )
         for entity_definition in values(tax_benefit_system.entity_definition_by_name)
       ],
     ),

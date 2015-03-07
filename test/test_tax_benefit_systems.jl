@@ -31,37 +31,31 @@ PARENT2 = Role(2)
 # Input variables
 
 
-age_en_mois = VariableDefinition(missing_value, "age_en_mois", individu, Month,
-  input_variable = true,
+age_en_mois = VariableDefinition("age_en_mois", individu, Month, missing_value,
   label = "Âge (en nombre de mois)",
 )
 
-birth = VariableDefinition(permanent_default_value, "birth", individu, Date,
+birth = VariableDefinition("birth", individu, Date, permanent_default_value,
   cell_default = Date(1970, 1, 1),
-  input_variable = true,
   label = "Date de naissance",
   permanent = true,
 )
 
-depcom = VariableDefinition(requested_period_last_value, "depcom", famille, String,
-  input_variable = true,
+depcom = VariableDefinition("depcom", famille, String, requested_period_last_value,
   label = """Code INSEE "depcom" de la commune de résidence de la famille""",
 )
 
-id_famille = VariableDefinition(permanent_default_value, "id_famille", individu, Unsigned,
-  input_variable = true,
+id_famille = VariableDefinition("id_famille", individu, Unsigned, permanent_default_value,
   label = "Identifiant de la famille",
   permanent = true,
 )
 
-role_dans_famille = VariableDefinition(permanent_default_value, "role_dans_famille", individu, Role,
-  input_variable = true,
+role_dans_famille = VariableDefinition("role_dans_famille", individu, Role, permanent_default_value,
   label = "Rôle dans la famille",
   permanent = true,
 )
 
-salaire_brut = VariableDefinition(last_duration_last_value, "salaire_brut", individu, Float32,
-  input_variable = true,
+salaire_brut = VariableDefinition("salaire_brut", individu, Float32, last_duration_last_value,
   label = "Salaire brut",
 )
 
@@ -69,7 +63,8 @@ salaire_brut = VariableDefinition(last_duration_last_value, "salaire_brut", indi
 # Formulas
 
 
-age = VariableDefinition("age", individu, Year, label = "Âge (en nombre d'années)") do simulation, variable, period
+age = VariableDefinition("age", individu, Year, missing_value, label = "Âge (en nombre d'années)") do simulation,
+    variable, period
   @variable_at(age_en_mois, period, nothing)
   return period, (age_en_mois === nothing
     ? Year[Year(period.start) - Year(birth_cell) for birth_cell in @calculate(birth, period)]
@@ -77,7 +72,8 @@ age = VariableDefinition("age", individu, Year, label = "Âge (en nombre d'anné
 end
 
 
-dom_tom = VariableDefinition("dom_tom", famille, Bool, label = "La famille habite-t-elle les DOM-TOM ?"
+dom_tom = VariableDefinition("dom_tom", famille, Bool, requested_period_last_value,
+  label = "La famille habite-t-elle les DOM-TOM ?"
 ) do simulation, variable, period
   period = YearPeriod(firstdayofyear(period.start))
   @calculate(depcom, period)
@@ -85,13 +81,14 @@ dom_tom = VariableDefinition("dom_tom", famille, Bool, label = "La famille habit
 end
 
 
-dom_tom_individu = VariableDefinition("dom_tom_individu", individu, Bool,
+dom_tom_individu = VariableDefinition("dom_tom_individu", individu, Bool, requested_period_last_value,
   label = "La personne habite-t-elle les DOM-TOM ?") do simulation, variable, period
   return period, entity_to_person(@calculate(dom_tom, period))
 end
 
 
-revenu_disponible = VariableDefinition("revenu_disponible", individu, Float32, label = "Revenu disponible de la famille"
+revenu_disponible = VariableDefinition("revenu_disponible", individu, Float32, requested_period_default_value,
+  label = "Revenu disponible de la famille"
 ) do simulation, variable, period
   period = YearPeriod(firstdayofyear(period.start))
   @calculate_add(rsa, period)
@@ -100,7 +97,8 @@ revenu_disponible = VariableDefinition("revenu_disponible", individu, Float32, l
 end
 
 
-rsa = VariableDefinition("rsa", individu, Float32, label = "RSA") do simulation, variable, period
+rsa = VariableDefinition("rsa", individu, Float32, requested_period_default_value, label = "RSA") do simulation,
+    variable, period
   period = MonthPeriod(firstdayofmonth(period.start))
   date = period.start
   if date < Date(2010, 1, 1)
@@ -119,14 +117,16 @@ rsa = VariableDefinition("rsa", individu, Float32, label = "RSA") do simulation,
 end
 
 
-salaire_imposable = VariableDefinition("salaire_imposable", individu, Float32, label = "Salaire imposable"
+salaire_imposable = VariableDefinition("salaire_imposable", individu, Float32, requested_period_default_value,
+  label = "Salaire imposable"
 ) do simulation, variable, period
   period = YearPeriod(firstdayofyear(period.start))
   return period, @calculate(salaire_net, period) * 0.9 - 100 * @calculate(dom_tom_individu, period)
 end
 
 
-salaire_net = VariableDefinition("salaire_net", individu, Float32, label = "Salaire net") do simulation, variable, period
+salaire_net = VariableDefinition("salaire_net", individu, Float32, requested_period_default_value, label = "Salaire net"
+) do simulation, variable, period
   period = YearPeriod(firstdayofyear(period.start))
   return period, @calculate(salaire_brut, period) * 0.8
 end

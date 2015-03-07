@@ -36,6 +36,8 @@ convert{T<:Number}(::Type{T}, role::Role) = convert(T, role.value)
 .==(left::Union(Array, Number), right::Role) = left .== right.value
 
 
+isless(left::Number, right::Role) = isless(left, right.value)
+
 isless(left::Role, right::Number) = isless(left.value, right)
 
-isless(left::Number, right::Role) = isless(left, right.value)
+isless(left::Role, right::Role) = isless(left.value, right.value)
