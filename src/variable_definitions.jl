@@ -39,8 +39,8 @@ type VariableDefinition
   values
 
   function VariableDefinition(formula, name::String, entity_definition::EntityDefinition, cell_type::Type,
-      base_formula::Function; cell_default = nothing, cell_format = nothing, cell_to_value_at_period_json = nothing, cerfa_field = nothing,
-      label = name, permanent = false, start_date = nothing, stop_date = nothing, url = nothing,
+      base_formula::Function; cell_default = nothing, cell_format = nothing, cell_to_value_at_period_json = nothing,
+      cerfa_field = nothing, label = name, permanent = false, start_date = nothing, stop_date = nothing, url = nothing,
       value_at_period_to_cell = nothing, values = nothing)
     if cell_default === nothing
       cell_default =
@@ -80,17 +80,20 @@ type VariableDefinition
         cell_type <: Year ? value_at_period_to_year :
         error("Unknown converter value_at_period_to_cell for type ", cell_type)
     end
-    return new(formula, name, entity_definition, cell_type, base_formula, cell_format, cell_default, cell_to_value_at_period_json,
-      cerfa_field, label, permanent, start_date, stop_date, url, value_at_period_to_cell, values)
+    return new(formula, name, entity_definition, cell_type, base_formula, cell_format, cell_default,
+      cell_to_value_at_period_json, cerfa_field, label, permanent, start_date, stop_date, url, value_at_period_to_cell,
+      values)
   end
 end
 
 VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type::Type, base_formula::Function;
-  cell_default = nothing, cell_format = nothing, cell_to_value_at_period_json = nothing, cerfa_field = nothing, label = name, permanent = false,
-  start_date = nothing, stop_date = nothing, url = nothing, value_at_date_to_cell = nothing, values = nothing
+  cell_default = nothing, cell_format = nothing, cell_to_value_at_period_json = nothing, cerfa_field = nothing,
+  label = name, permanent = false, start_date = nothing, stop_date = nothing, url = nothing,
+  value_at_period_to_cell = nothing, values = nothing
 ) = VariableDefinition(nothing, name, entity_definition, cell_type, base_formula, cell_default = cell_default,
-  cell_format = cell_format, cell_to_value_at_period_json = cell_to_value_at_period_json, cerfa_field = cerfa_field, label = label, permanent = permanent,
-  start_date = start_date, stop_date = stop_date, url = url, value_at_date_to_cell = value_at_date_to_cell, values = values)
+  cell_format = cell_format, cell_to_value_at_period_json = cell_to_value_at_period_json, cerfa_field = cerfa_field,
+  label = label, permanent = permanent, start_date = start_date, stop_date = stop_date, url = url,
+  value_at_period_to_cell = value_at_period_to_cell, values = values)
 
 
 function to_cell(variable_definition::VariableDefinition)
