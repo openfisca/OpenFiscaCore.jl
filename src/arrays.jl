@@ -25,6 +25,11 @@
 .-(left::Array{Date}, right::Date) = Day[left_item - right for left_item in left]
 
 
+isless(left::Date, right::Array{Date}) = Bool[isless(left, right_item) for right_item in right]
+
+isless(left::Array{Date}, right::Date) = Bool[isless(left_item, right) for left_item in left]
+
+
 function assert_near(value::Union(Array, Number), target_value::Union(Array, Number); error_margin = 1, message = "")
   if error_margin <= 0
     @assert(all(target_value .== value), "$message$value differs from $target_value")
