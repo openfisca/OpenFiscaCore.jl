@@ -87,7 +87,7 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
       [
         entity_definition.name_plural => pipe(
           item_to_singleton,
-          test_isa(Array{Dict{String, Any}}),
+          # test_isa(Array{Dict{String, Any}}),  # Neither Array{Dict} nor Array{Dict{String, Any}} work.
         )
         for entity_definition in values(tax_benefit_system.entity_definition_by_name)
       ],
