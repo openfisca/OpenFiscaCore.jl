@@ -113,7 +113,7 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
     output_variables = pop!(test_case, "output_variables")
     period = pop!(test_case, "period")
 
-    if input_variables !== nothing
+    if input_variables !== nothing || all(value -> value === nothing,  values(test_case))
       # When using input_variables, always ensure that the test_case contains at least one person. Otherwise scenario
       # validation will fail.
       person_name_plural = tax_benefit_system.entity_definition_by_name[tax_benefit_system.person_name].name_plural
