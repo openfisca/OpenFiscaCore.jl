@@ -335,7 +335,7 @@ end
 
 legislation_at(simulation::Simulation, date::Date; reference = false) = (reference ?
   get!(simulation.reference_legislation_by_date_cache, date) do
-    return reference_legislation_at(simulation.tax_benefit_system, date)
+    return legislation_at(simulation.tax_benefit_system, date, reference = true)
   end
 :
   get!(simulation.legislation_by_date_cache, date) do
