@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-type VariableDefinition
+immutable VariableDefinition
   formula
   name::String
   entity_definition::EntityDefinition
