@@ -96,6 +96,38 @@ VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type:
   value_at_period_to_cell = value_at_period_to_cell, values = values)
 
 
+function to_array(variable_definition::VariableDefinition, period::DatePeriod)
+  value_at_period_to_cell = variable_definition.value_at_period_to_cell(variable_definition)
+  return convertible::Convertible -> condition(
+    test_isa(Dict),
+    pipe(
+      # Value is a dict of (period, value) couples.
+      uniform_mapping(
+        pipe(
+          to_period,
+          require,
+        ),
+        item_to_singleton,
+        uniform_sequence(
+          value_at_period_to_cell,
+        ),
+        empty_to_nothing,
+        drop_nothing = true,
+      ),
+      empty_to_nothing,
+    ),
+    pipe(
+      item_to_singleton,
+      uniform_sequence(
+        value_at_period_to_cell,
+      ),
+      empty_to_nothing,
+      call(array -> [period => array]),
+    ),
+  )(convertible)
+end
+
+
 function to_cell(variable_definition::VariableDefinition)
   value_at_period_to_cell = variable_definition.value_at_period_to_cell(variable_definition)
   return convertible::Convertible -> condition(

@@ -80,7 +80,7 @@ function Simulation(scenario::Scenario; debug = false, debug_all = false, trace 
     trace = trace,
   )
   fill!(simulation, scenario)
-  for entity in values(simulation.entity_by_name)
+   for entity in values(simulation.entity_by_name)
     @assert(entity.count > 0, "Entity $(entity.definition.name) has no member.")
   end
   return simulation
@@ -153,7 +153,41 @@ entity_to_entity_period_value(simulation::Simulation, variable::PeriodicVariable
 ) = variable.definition.formula(simulation, variable, period)
 
 
-function fill!(simulation::Simulation, scenario::Scenario)
+function fill!(simulation::Simulation, scenario::InputVariablesScenario)
+  person = get_person(simulation)
+  variable_definition_by_name = simulation.tax_benefit_system.variable_definition_by_name
+
+  if scenario.input_variables !== nothing
+    for (variable_name, array_by_period) in scenario.input_variables
+      variable = get_variable!(simulation, variable_name)
+      entity = get_entity(variable)
+      for (period, array) in array_by_period
+        if entity.count == 0
+          entity.count = length(array)
+        end
+        set_array(variable, period, array)
+      end
+    end
+  end
+
+  for entity in values(simulation.entity_by_name)
+    if entity.count == 0
+      entity.count = 1
+    end
+    if entity !== person
+      role_variable = get_role_variable(entity)
+      role_array = get_array(role_variable, simulation.period, nothing)
+      if role_array === nothing
+        entity.roles_count = 1
+      else
+        entity.roles_count = maximum(role_array)
+      end
+    end
+  end
+end
+
+
+function fill!(simulation::Simulation, scenario::TestCaseScenario)
   variable_definition_by_name = simulation.tax_benefit_system.variable_definition_by_name
   person = get_person(simulation)
   person_plural = person.definition.name_plural

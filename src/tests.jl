@@ -51,37 +51,7 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
           test_isa(String),
           strip,
         ),
-        "output_variables" => pipe(
-          test_isa(Union(Dict, OrderedDict)),
-          uniform_mapping(
-            pipe(
-              test_isa(String),
-              test_in(variables_name),
-              require,
-            ),
-            noop,
-          ),
-          convertible::Convertible -> begin
-            if convertible.error !== nothing || convertible.value === nothing
-              return convertible
-            end
-            error_by_variable_name = (String => Any)[]
-            output_by_variable_name = (String => Any)[]
-            for (variable_name, value) in convertible.value
-              variable_definition = variable_definition_by_name[variable_name]
-              converted_variable = Convertible(value, convertible.context) |> to_cell(variable_definition)
-              if converted_variable.value !== nothing
-                output_by_variable_name[variable_name] = converted_variable.value
-              end
-              if converted_variable.error !== nothing
-                error_by_variable_name[variable_name] = converted_variable.error
-              end
-            end
-            return Convertible(output_by_variable_name, convertible.context,
-              isempty(error_by_variable_name) ? nothing : error_by_variable_name)
-          end,
-          empty_to_nothing,
-        ),
+        "output_variables" => test_isa(Union(Dict, OrderedDict)),
         "period" => to_period,
       ],
       [
@@ -104,6 +74,16 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
       return converted
     end
 
+    converted = struct(
+      [
+        "output_variables" => to_input_variables(tax_benefit_system, converted.value["period"]),
+      ],
+      default = noop,
+    )(converted)
+    if converted.error !== nothing
+      return converted
+    end
+
     test_case = copy(converted.value)
     axes = pop!(test_case, "axes")
     description = pop!(test_case, "description")
@@ -113,21 +93,26 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
     output_variables = pop!(test_case, "output_variables")
     period = pop!(test_case, "period")
 
-    if input_variables !== nothing || all(value -> value === nothing,  values(test_case))
-      # When using input_variables, always ensure that the test_case contains at least one person. Otherwise scenario
-      # validation will fail.
-      person_name_plural = tax_benefit_system.entity_definition_by_name[tax_benefit_system.person_name].name_plural
-      person_members = test_case[person_name_plural]
-      if person_members === nothing
-        test_case[person_name_plural] = person_members = Dict{String, Any}[]
-      end
-      if isempty(person_members)
-        push!(person_members, (String => Any)[])
-      end
+    if test_case !== nothing && all(entity_members -> entity_members === nothing, values(test_case))
+      test_case = nothing
     end
+
+    # if input_variables !== nothing || all(value -> value === nothing,  values(test_case))
+    #   # When using input_variables, always ensure that the test_case contains at least one person. Otherwise scenario
+    #   # validation will fail.
+    #   person_name_plural = tax_benefit_system.entity_definition_by_name[tax_benefit_system.person_name].name_plural
+    #   person_members = test_case[person_name_plural]
+    #   if person_members === nothing
+    #     test_case[person_name_plural] = person_members = Dict{String, Any}[]
+    #   end
+    #   if isempty(person_members)
+    #     push!(person_members, (String => Any)[])
+    #   end
+    # end
 
     converted_scenario = Convertible([
       "axes" => axes,
+      "input_variables" => input_variables,
       "period" => period,
       "test_case" => test_case,
     ], convertible.context) |> to_scenario(tax_benefit_system, repair = true)
@@ -135,33 +120,6 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
       return Convertible(converted.value, convertible.context, converted_scenario.error)
     end
     scenario = converted_scenario.value
-
-    if input_variables !== nothing
-      # Dispatch input variables to their respective entities.
-      # When there are several entities of the same type, the first one is used.
-      error_by_variable_name = (String => Any)[]
-      test_case = scenario.test_case
-      for (variable_name, value) in input_variables
-        variable_definition = variable_definition_by_name[variable_name]
-        entity_definition = variable_definition.entity_definition
-        entity_name_plural = entity_definition.name_plural
-        entity_members = test_case[entity_name_plural]
-        entity_member = first(entity_members)
-        existing_value = get(entity_member, variable_name, nothing)
-        if existing_value !== nothing
-          error_by_variable_name[variable_name] = N_("Input variable can't override an existing value in entity.")
-          continue
-        end
-        converted_cell = Convertible(value) |> to_cell(variable_definition)
-        if converted_cell.error !== nothing
-          error_by_variable_name[variable_name] = converted_cell.error
-        end
-        entity_member[variable_name] = converted_cell.value
-      end
-      if !isempty(error_by_variable_name)
-        return Convertible(converted.value, convertible.context, ["input_variables" => error_by_variable_name])
-      end
-    end
 
     return Convertible(
       filter((key, value) -> value !== nothing, [
