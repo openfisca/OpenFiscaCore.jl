@@ -32,6 +32,7 @@ importall Biryani
 importall Biryani.DatesConverters
 import DataStructures: OrderedDict
 import Dates: Date, Day, day, daysinmonth, daysinyear, firstdayofmonth, firstdayofyear, Month, month, Period, Year, year, yearmonthday
+import Iterators: partition
 
 
 abstract AbstractSimulation
