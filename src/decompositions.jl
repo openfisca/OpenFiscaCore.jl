@@ -69,11 +69,6 @@ function decomposition(tax_benefit_system::TaxBenefitSystem, name::Symbol, child
 end
 
 
-macro define_decomposition(args...)
-    decomposition(tax_benefit_system, args...)
-end
-
-
 flatten(decomposition_node::DecompositionNode) = [
     decomposition_node,
     map(flatten, decomposition_node.children)...,
