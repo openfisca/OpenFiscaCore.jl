@@ -20,35 +20,73 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-immutable DecompositionNode
-    variable_definition::VariableDefinition
-    children::Array{DecompositionNode}
-end
-
-DecompositionNode(variable_definition::VariableDefinition) = DecompositionNode(variable_definition, DecompositionNode[])
+abstract AbstractDecompositionNode
 
 
-macro decomposition_node(variable, children)
-    return esc(quote
-        DecompositionNode(
-            tax_benefit_system.variable_definition_by_name[$(string(variable))],
-            $children,
-        )
-    end)
+typealias DecompositionNodeChild Union(AbstractDecompositionNode, VariableDefinition)
+
+
+immutable DecompositionNode <: AbstractDecompositionNode
+    name::String
+    children::Array{DecompositionNodeChild}
 end
 
 
-flat(decomposition_node::DecompositionNode) = isempty(decomposition_node.children) ?
-    decomposition_node :
-    [
-        decomposition_node,
-        map(array, decomposition_node.children)...,
-    ]
+decomposition(tax_benefit_system::TaxBenefitSystem, variable_name::String) =
+    tax_benefit_system.variable_definition_by_name[variable_name]
+
+decomposition(tax_benefit_system::TaxBenefitSystem, name::Symbol) = decomposition(tax_benefit_system, string(name))
+
+decomposition(tax_benefit_system::TaxBenefitSystem, name::String, children::Array{DecompositionNodeChild}) =
+    DecompositionNode(name, children)
+
+decomposition(tax_benefit_system::TaxBenefitSystem, name::Symbol, children::Array{DecompositionNodeChild}) =
+    decomposition(tax_benefit_system, string(name), children)
+
+function decomposition(tax_benefit_system::TaxBenefitSystem, name::Symbol, children::Expr; depth = 1)
+    @assert children.head in [:hcat, :row, :vcat]
+    normalized_args = mapreduce(vcat, [], children.args) do arg
+        isa(arg, Expr) && arg.head === :row ? arg.args : arg
+    end
+    children_nodes::Array{DecompositionNodeChild} = filter(
+        x -> x !== nothing,
+        map(partition(normalized_args, 2, 1)) do pair
+            left, right = pair
+            if isa(left, Symbol) && isa(right, Symbol)
+                decomposition(tax_benefit_system, string(left))
+            elseif isa(left, Symbol) && isa(right, Expr)
+                decomposition(tax_benefit_system, left, right; depth = depth + 1)
+            elseif isa(left, Expr) && isa(right, Expr)
+                error("Unexpected two consecutive Expr for $left and $right")
+            end
+        end
+    )
+    last_arg = last(children.args)
+    if isa(last_arg, Symbol)
+        push!(children_nodes, decomposition(tax_benefit_system, string(last_arg)))
+    end
+    decomposition(tax_benefit_system, name, children_nodes)
+end
+
+
+macro define_decomposition(args...)
+    decomposition(tax_benefit_system, args...)
+end
+
+
+flatten(decomposition_node::DecompositionNode) = [
+    decomposition_node,
+    map(flatten, decomposition_node.children)...,
+]
+
+flatten(variable_definition::VariableDefinition) = variable_definition
 
 
 to_json(decomposition_node::DecompositionNode) = [
-    "children" => !isempty(decomposition_node.children) ?
-        map(to_json, decomposition_node.children) :
-        nothing,
-    "name" => decomposition_node.variable_definition.name,
+    "children" => map(to_json, decomposition_node.children),
+    "name" => decomposition_node.name,
+]
+to_json(variable_definition::VariableDefinition) = [
+    "entity_definition.name" => variable_definition.entity_definition.name,
+    "name" => variable_definition.name,
 ]
