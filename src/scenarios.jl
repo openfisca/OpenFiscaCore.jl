@@ -143,7 +143,7 @@ function to_input_variables(tax_benefit_system::TaxBenefitSystem, period::DatePe
   variable_definition_by_name = tax_benefit_system.variable_definition_by_name
   variables_name = Set(keys(variable_definition_by_name))
 
-  return convertible::Convertible -> begin
+  return function run_to_input_variables(convertible::Convertible)
     if convertible.error !== nothing || convertible.value === nothing
       return convertible
     end
@@ -211,7 +211,7 @@ end
 function to_scenario(tax_benefit_system::TaxBenefitSystem; repair = false)
   variable_definition_by_name = tax_benefit_system.variable_definition_by_name
 
-  return convertible::Convertible -> begin
+  return function run_to_scenario(convertible::Convertible)
     if convertible.error !== nothing || convertible.value === nothing
       return convertible
     end

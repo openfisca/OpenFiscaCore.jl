@@ -64,7 +64,7 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
     ),
   )
 
-  return convertible::Convertible -> begin
+  return function run_to_test(convertible::Convertible)
     if convertible.error !== nothing || convertible.value === nothing
       return convertible
     end
