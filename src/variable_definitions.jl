@@ -96,7 +96,7 @@ VariableDefinition(name::String, entity_definition::EntityDefinition, cell_type:
   value_at_period_to_cell = value_at_period_to_cell, values = values)
 
 
-function to_array(variable_definition::VariableDefinition, period::DatePeriod)
+function to_array_by_period(variable_definition::VariableDefinition, period::DatePeriod)
   value_at_period_to_cell = variable_definition.value_at_period_to_cell(variable_definition)
   return convertible::Convertible -> condition(
     test_isa(Dict),
