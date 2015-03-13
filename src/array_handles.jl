@@ -141,6 +141,9 @@ div(left::Union(Array, Number), right::ArrayHandle) = div(left, get_array(right)
 done(array_handle::ArrayHandle, state) = done(get_array(array_handle), state)
 
 
+getindex(left::ArrayHandle, right::BitArray) = getindex(get_array(left), right)
+
+
 isless(left::ArrayHandle, right::ArrayHandle) = isless(get_array(left), get_array(right))
 
 isless(left::ArrayHandle, right::Union(Array, Date, Number)) = isless(get_array(left), right)
