@@ -188,7 +188,7 @@ function fill!(simulation::Simulation, scenario::InputVariablesScenario)
       role_array = get_array!(role_variable, simulation.period) do
         return ones(role_variable.definition.cell_type, person.count)
       end
-      entity.roles_count = maximum(role_array)
+      entity.roles_count = 1
     end
   end
 end

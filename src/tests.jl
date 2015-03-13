@@ -97,19 +97,6 @@ function to_test(tax_benefit_system::TaxBenefitSystem)
       test_case = nothing
     end
 
-    # if input_variables !== nothing || all(value -> value === nothing,  values(test_case))
-    #   # When using input_variables, always ensure that the test_case contains at least one person. Otherwise scenario
-    #   # validation will fail.
-    #   person_name_plural = tax_benefit_system.entity_definition_by_name[tax_benefit_system.person_name].name_plural
-    #   person_members = test_case[person_name_plural]
-    #   if person_members === nothing
-    #     test_case[person_name_plural] = person_members = Dict{String, Any}[]
-    #   end
-    #   if isempty(person_members)
-    #     push!(person_members, (String => Any)[])
-    #   end
-    # end
-
     converted_scenario = Convertible([
       "axes" => axes,
       "input_variables" => input_variables,

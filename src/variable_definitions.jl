@@ -131,7 +131,7 @@ end
 function to_cell(variable_definition::VariableDefinition)
   value_at_period_to_cell = variable_definition.value_at_period_to_cell(variable_definition)
   return convertible::Convertible -> condition(
-    test_isa(Dict),
+    test_isa(Union(Dict, OrderedDict)),
     pipe(
       # Value is a dict of (period, value) couples.
       uniform_mapping(
