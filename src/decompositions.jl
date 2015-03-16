@@ -32,17 +32,6 @@ immutable DecompositionNode <: AbstractDecompositionNode
 end
 
 
-to_json(decomposition_node::DecompositionNode) = [
-  "children" => map(to_json, decomposition_node.children),
-  "name" => decomposition_node.name,
-]
-
-to_json(variable_definition::VariableDefinition) = [
-  "entity_definition.name" => variable_definition.entity_definition.name,
-  "name" => variable_definition.name,
-]
-
-
 visit_decomposition(tax_benefit_system::TaxBenefitSystem, variable_name::String) =
   tax_benefit_system.variable_definition_by_name[variable_name]
 
