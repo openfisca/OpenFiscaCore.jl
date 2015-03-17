@@ -28,6 +28,8 @@ typealias DecompositionNodeChild Union(AbstractDecompositionNode, VariableDefini
 
 immutable DecompositionNode <: AbstractDecompositionNode
   name::String
+  label::String
+  short_label::String
   children::Array{DecompositionNodeChild}
 end
 
@@ -38,33 +40,17 @@ visit_decomposition(tax_benefit_system::TaxBenefitSystem, variable_name::String)
 visit_decomposition(tax_benefit_system::TaxBenefitSystem, name::Symbol) =
   visit_decomposition(tax_benefit_system, string(name))
 
-visit_decomposition(tax_benefit_system::TaxBenefitSystem, name::String, children::Array{DecompositionNodeChild}) =
-  DecompositionNode(name, children)
+visit_decomposition(tax_benefit_system::TaxBenefitSystem, name::String, label::String, short_label::String,
+  children::Array{DecompositionNodeChild}) = DecompositionNode(name, label, short_label, children)
 
-visit_decomposition(tax_benefit_system::TaxBenefitSystem, name::Symbol, children::Array{DecompositionNodeChild}) =
-  visit_decomposition(tax_benefit_system, string(name), children)
-
-function visit_decomposition(tax_benefit_system::TaxBenefitSystem, name::Symbol, children::Expr)
+function visit_decomposition(tax_benefit_system::TaxBenefitSystem, name::Symbol, label::String, short_label::String,
+    children::Expr)
   @assert children.head in [:hcat, :row, :vcat]
-  normalized_args = mapreduce(vcat, [], children.args) do arg
-    isa(arg, Expr) && arg.head === :row ? arg.args : arg
-  end
-  children_nodes::Array{DecompositionNodeChild} = filter(
-    x -> x !== nothing,
-    map(partition(normalized_args, 2, 1)) do pair
-      left, right = pair
-      if isa(left, Symbol) && isa(right, Symbol)
-        visit_decomposition(tax_benefit_system, string(left))
-      elseif isa(left, Symbol) && isa(right, Expr)
-        visit_decomposition(tax_benefit_system, left, right)
-      elseif isa(left, Expr) && isa(right, Expr)
-            error("Unexpected two consecutive Expr for $left and $right")
-      end
-    end
+  children_nodes::Array{DecompositionNodeChild} = map(
+    arg -> isa(arg, Symbol) ?
+      visit_decomposition(tax_benefit_system, arg) :
+      visit_decomposition(tax_benefit_system, arg.args...),
+    children.args
   )
-  last_arg = last(children.args)
-  if isa(last_arg, Symbol)
-    push!(children_nodes, visit_decomposition(tax_benefit_system, string(last_arg)))
-  end
-  visit_decomposition(tax_benefit_system, name, children_nodes)
+  visit_decomposition(tax_benefit_system, string(name), label, short_label, children_nodes)
 end
