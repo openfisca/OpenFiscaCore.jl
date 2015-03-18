@@ -504,6 +504,7 @@ end
 
 function set_array(variable::PeriodicVariable, period::DatePeriod, array::Union(Array, BitArray))
   @assert(array !== nothing, "Can't set variable $(variable.definition.name) to nothing.")
+  @assert(ndims(array) == 1, "Array of $(variable.definition.name) is not a vector.")
   @assert(length(array) == get_entity(variable).count, "Can't set variable $(variable.definition.name) to an array" *
     " that is not of length $(get_entity(variable).count): $(array).")
   @assert(all(cell -> cell !== nothing, array),
@@ -516,6 +517,7 @@ end
 function set_array(variable::PeriodicVariable, variable_at_period::VariableAtPeriod)
   array = get_array(variable_at_period)
   @assert(array !== nothing, "Can't set variable $(variable.definition.name) to nothing.")
+  @assert(ndims(array) == 1, "Array of $(variable.definition.name) is not a vector.")
   @assert(length(array) == get_entity(variable).count, "Can't set variable $(variable.definition.name) to an array" *
     " that is not of length $(get_entity(variable).count): $(array).")
   @assert(all(cell -> cell !== nothing, array),
@@ -532,6 +534,7 @@ set_array(variable::PermanentVariable, period::DatePeriod, array::Union(Array, B
 
 function set_array(variable::PermanentVariable, array::Union(Array, BitArray))
   @assert(array !== nothing, "Can't set variable $(variable.definition.name) to nothing.")
+  @assert(ndims(array) == 1, "Array of $(variable.definition.name) is not a vector.")
   @assert(length(array) == get_entity(variable).count, "Can't set variable $(variable.definition.name) to an array" *
     " that is not of length $(get_entity(variable).count): $(array).")
   @assert(all(cell -> cell !== nothing, array),
