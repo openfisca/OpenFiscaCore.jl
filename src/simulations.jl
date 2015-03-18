@@ -292,8 +292,11 @@ function fill!(simulation::Simulation, scenario::TestCaseScenario)
         axis_array = get_array!(axis_variable, axis_period) do
           return default_array(axis_variable)
         end
-        axis_array[axis["index"] + 1:length(test_case[axis_entity_plural]):end] = linspace(axis["min"], axis["max"],
-          axis_count)
+        axis_values = linspace(axis["min"], axis["max"], axis_count)
+        if axis_variable.definition.cell_type <: Integer
+          axis_values = map(x -> round(Integer, x), axis_values)
+        end
+        axis_array[axis["index"] + 1:length(test_case[axis_entity_plural]):end] = axis_values
       end
     else
       for (parallel_axes_index, parallel_axes) in enumerate(scenario.axes)
