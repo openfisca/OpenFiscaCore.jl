@@ -151,9 +151,19 @@ function apply_tax_scale(tax_scale::MarginalRateScaleAtDate, array::Array; facto
   end
   a = max(min(base, thresholds[:, 2:end]) - thresholds[:, 1:end - 1], 0)
   if round_base_decimals === nothing
-    return a * tax_scale.rates
+    @assert(ndims(a) == 2)
+    @assert(ndims(tax_scale.rates) == 1)
+    result = a * tax_scale.rates
+    @assert(size(result, 2) == 1)
+    result = result[:,1]
+    return result
   end
-  return sum(round(a, round_base_decimals) * repeat(tax_scale.rates, outer = [1, length(array)]), 2)
+  @assert(ndims(a) == 2)
+  @assert(ndims(tax_scale.rates) == 1)
+  result = sum(round(a, round_base_decimals) * repeat(tax_scale.rates, outer = [1, length(array)]), 2)
+  @assert(size(result, 2) == 1)
+  result = result[:,1]
+  return result
 end
 
 apply_tax_scale(tax_scale::MarginalRateScaleAtDate, array_handle::ArrayHandle; factor = 1,
