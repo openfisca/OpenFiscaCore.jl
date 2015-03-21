@@ -162,8 +162,8 @@ function to_input_variables(tax_benefit_system::TaxBenefitSystem, period::DatePe
         if convertible.error !== nothing || convertible.value === nothing
           return convertible
         end
-        error_by_variable_name = (String => Any)[]
-        input_by_variable_name = (String => Any)[]
+        error_by_variable_name = OrderedDict{String, Any}()
+        input_by_variable_name = OrderedDict{String, Any}()
         for (variable_name, value) in convertible.value
           variable_definition = variable_definition_by_name[variable_name]
           converted_variable = Convertible(value, convertible.context) |> to_array_by_period(variable_definition,
