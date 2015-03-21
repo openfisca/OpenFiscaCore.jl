@@ -170,25 +170,31 @@ function fill!(simulation::Simulation, scenario::InputVariablesScenario)
     end
   end
 
+  if person.count == 0
+    person.count = 1
+  end
   for entity in values(simulation.entity_by_name)
-    if entity.count == 0
-      entity.count = 1
+    if entity === person
+      continue
     end
-    if entity !== person
-      index_variable = get_index_variable(entity)
-      index_array = get_array!(index_variable, simulation.period) do
-        index_array = Array(index_variable.definition.cell_type, person.count)
-        for i in 1:person.count
-          index_array[i] = i
-        end
-        return index_array
-      end
 
-      role_variable = get_role_variable(entity)
-      role_array = get_array!(role_variable, simulation.period) do
-        return ones(role_variable.definition.cell_type, person.count)
+    index_variable = get_index_variable(entity)
+    index_array = get_array!(index_variable, simulation.period) do
+      index_array = Array(index_variable.definition.cell_type, person.count)
+      for i in 1:person.count
+        index_array[i] = i
       end
-      entity.roles_count = 1
+      return index_array
+    end
+
+    role_variable = get_role_variable(entity)
+    role_array = get_array!(role_variable, simulation.period) do
+      return ones(role_variable.definition.cell_type, person.count)
+    end
+    entity.roles_count = 1
+
+    if entity.count == 0
+      entity.count = maximum(index_array)
     end
   end
 end
