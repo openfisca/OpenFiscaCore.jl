@@ -178,7 +178,7 @@ macro calculate(variable, args...)
 end
 
 
-function calculate_add(variable::PeriodicVariable, period::MonthPeriod)
+function calculate_add(variable::PeriodicVariable, period::DatePeriod)
   cell_type = variable.definition.cell_type
   @assert !issubtype(cell_type, Bool)
   @assert !issubtype(cell_type, Integer)  # TODO: Remove this test, once all Python formulas work in Julia.
@@ -189,45 +189,45 @@ function calculate_add(variable::PeriodicVariable, period::MonthPeriod)
   end
 
   array = zeros(variable)
-  year, month, day = yearmonthday(period.start)
-  for month_number in 1:period.length
-    month_period = MonthPeriod(Date(year, month, day))
-    variable_at_period = calculate(variable, month_period)
-    array .+= get_array(variable_at_period)
-    month += 1
-    if month > 12
-      month -= 12
-      year += 1
+  remaining_period_months = isa(period, MonthPeriod) ? period.length : period.length * 12
+  requested_start = period.start
+  requested_period = typeof(period)(requested_start)
+  while true
+    variable_at_period = calculate(variable, requested_period, accept_other_period = true)
+    returned_period = variable_at_period.period
+    returned_start = returned_period.start
+    @assert day(returned_start) == 1
+    # Note: A dated formula may start after requested period => returned_start is not always equal to
+    # returned_start.
+    if returned_start < requested_start
+      error("Period $(string(returned_period)) returned by variable $(variable.definition.name) doesn't have the same" *
+        " start as requested period $(string(requested_period)).")
     end
-  end
-  return set_array(variable, period, array)
-end
-
-function calculate_add(variable::PeriodicVariable, period::YearPeriod)
-  cell_type = variable.definition.cell_type
-  @assert !issubtype(cell_type, Bool)
-  @assert !issubtype(cell_type, Integer)  # TODO: Remove this test, once all Python formulas work in Julia.
-
-  variable_at_period = variable_at(variable, period, nothing)
-  if variable_at_period !== nothing
-    return variable_at_period
-  end
-
-  array = zeros(variable)
-  year, month, day = yearmonthday(period.start)
-  for year_number in 1:period.length
-    for month_number in 1:12
-      month_period = MonthPeriod(Date(year, month, day))
-      variable_at_period = calculate(variable, month_period)
-      array += get_array(variable_at_period)
-      month += 1
-      if month > 12
-        month -= 12
-        year += 1
+    if isa(returned_period, MonthPeriod)
+      returned_period_months = returned_period.length
+    else
+      if !isa(returned_period, YearPeriod)
+        error("Requested a monthly or yearly period. Got $(string(returned_period)) returned by variable" *
+          " $(variable.definition.name).")
       end
+      returned_period_months = returned_period.length * 12
     end
+    requested_start_months = year(requested_start) * 12 + month(requested_start)
+    returned_start_months = year(returned_start) * 12 + month(returned_start)
+    returned_period_months = returned_start_months + returned_period_months - requested_start_months
+    remaining_period_months -= returned_period_months
+    if remaining_period_months < 0
+      error("Period $returned_period returned by variable $(variable.definition.name) is larger than the" *
+        " requested_period $requested_period.")
+    end
+    array .+= get_array(variable_at_period)
+
+    if remaining_period_months <= 0
+      return set_array(variable, period, array)
+    end
+    requested_start = requested_start + Month(returned_period_months)
+    requested_period = remaining_period_months % 12 == 0 ? YearPeriod(requested_start) : MonthPeriod(requested_start)
   end
-  return set_array(variable, period, array)
 end
 
 
@@ -237,7 +237,7 @@ macro calculate_add(variable, period)
 end
 
 
-function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
+function calculate_add_divide(variable::PeriodicVariable, period::DatePeriod)
   cell_type = variable.definition.cell_type
   @assert !issubtype(cell_type, Bool)
   @assert !issubtype(cell_type, Integer)
@@ -249,18 +249,20 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
   end
 
   array = zeros(variable)
-  remaining_period_months = period.length
-  requested_period = period
+  remaining_period_months = isa(period, MonthPeriod) ? period.length : period.length * 12
+  requested_start = period.start
+  requested_period = typeof(period)(requested_start)
   while true
     variable_at_period = calculate(variable, requested_period, accept_other_period = true)
     requested_start = requested_period.start
     returned_period = variable_at_period.period
     returned_start = returned_period.start
     @assert day(returned_start) == 1
-    if requested_start < returned_start || stop_date(returned_period) < requested_start
-      error("Period $(string(returned_period)) returned by variable $(variable.definition.name) doesn't include" *
-        " start of requested period $(string(requested_period)).")
-    end
+    # Note: A dated formula may start after requested period.
+    # if requested_start < returned_start || stop_date(returned_period) < requested_start
+    #   error("Period $(string(returned_period)) returned by variable $(variable.definition.name) doesn't include" *
+    #     " start of requested period $(string(requested_period)).")
+    # end
     requested_start_months = year(requested_start) * 12 + month(requested_start)
     returned_start_months = year(returned_start) * 12 + month(returned_start)
     if isa(returned_period, MonthPeriod)
@@ -281,58 +283,17 @@ function calculate_add_divide(variable::PeriodicVariable, period::MonthPeriod)
     if remaining_period_months <= 0
       return set_array(variable, period, array)
     end
-    requested_period_length = requested_period.length - intersection_months
-    requested_period = MonthPeriod(requested_start + Month(intersection_months), requested_period_length)
-  end
-end
-
-function calculate_add_divide(variable::PeriodicVariable, period::YearPeriod)
-  cell_type = variable.definition.cell_type
-  @assert !issubtype(cell_type, Bool)
-  @assert !issubtype(cell_type, Integer)
-  @assert day(period.start) == 1
-
-  variable_at_period = variable_at(variable, period, nothing)
-  if variable_at_period !== nothing
-    return variable_at_period
-  end
-
-  array = zeros(variable)
-  remaining_period_months = period.length * 12
-  requested_period = period
-  while true
-    variable_at_period = calculate(variable, requested_period, accept_other_period = true)
-    requested_start = requested_period.start
-    returned_period = variable_at_period.period
-    returned_start = returned_period.start
-    @assert day(returned_start) == 1
-    if requested_start < returned_start || stop_date(returned_period) < requested_start
-      error("Period $(string(returned_period)) returned by variable $(variable.definition.name) doesn't include" *
-        " start of requested period $(string(requested_period)).")
-    end
-    requested_start_months = year(requested_start) * 12 + month(requested_start)
-    returned_start_months = year(returned_start) * 12 + month(returned_start)
     if isa(returned_period, MonthPeriod)
-      intersection_months = min(requested_start_months + requested_period.length * 12,
-        returned_start_months + returned_period.length) - requested_start_months
-      array .+= get_array(variable_at_period) .* intersection_months ./ returned_period.length
+      returned_period_months = returned_period.length
     else
       if !isa(returned_period, YearPeriod)
         error("Requested a monthly or yearly period. Got $(string(returned_period)) returned by variable" *
           " $(variable.definition.name).")
       end
-      intersection_months = min(requested_start_months + requested_period.length * 12,
-        returned_start_months + returned_period.length * 12) - requested_start_months
-      array .+= get_array(variable_at_period) .* intersection_months ./ (returned_period.length * 12)
+      returned_period_months = returned_period.length * 12
     end
-
-    # Note: Bug with Julia 0.3.2 when int() functions are not used
-    remaining_period_months -= intersection_months
-    if remaining_period_months <= 0
-      return set_array(variable, period, array)
-    end
-    requested_period_length = int(requested_period.length) - int(floor(int(intersection_months) / 12))
-    requested_period = YearPeriod(requested_start + Month(intersection_months), requested_period_length)
+    requested_start = returned_start + Month(intersection_months)
+    requested_period = remaining_period_months % 12 == 0 ? YearPeriod(requested_start) : MonthPeriod(requested_start)
   end
 end
 
