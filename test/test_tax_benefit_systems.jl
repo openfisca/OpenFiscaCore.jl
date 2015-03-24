@@ -167,7 +167,7 @@ individu.count = 2
 set_array(simulation, "birth", [Date(1973, 1, 1), Date(1974, 1, 1)])
 set_array(simulation, "id_famille", [1, 1])
 set_array(simulation, "role_dans_famille", [PARENT1, PARENT2])
-assert_near(calculate(simulation, "age"), [Year(40), Year(39)], error_margin = 0)
+assert_near(calculate(simulation, "age"), [Year(40), Year(39)], absolute_error_margin = 0)
 
 # Redo the previous simulation using the add_member helper function.
 simulation = Simulation(tax_benefit_system, YearPeriod(2013))
@@ -176,7 +176,7 @@ individu = get_entity(simulation, "individu")
 add_member(famille)
 add_member(individu, birth = Date(1973, 1, 1), role_dans_famille = PARENT1)
 add_member(individu, birth = Date(1974, 1, 1), role_dans_famille = PARENT2)
-assert_near(calculate(simulation, "age"), [Year(40), Year(39)], error_margin = 0)
+assert_near(calculate(simulation, "age"), [Year(40), Year(39)], absolute_error_margin = 0)
 
 simulation = Simulation(tax_benefit_system, YearPeriod(2013))
 famille = get_entity(simulation, "famille")
@@ -187,7 +187,7 @@ individu.count = 2
 set_array(simulation, "age_en_mois", [Month(40 * 12 + 11), Month(39 * 12)])
 set_array(simulation, "id_famille", [1, 1])
 set_array(simulation, "role_dans_famille", [PARENT1, PARENT2])
-assert_near(calculate(simulation, "age"), [Year(40), Year(39)], error_margin = 0)
+assert_near(calculate(simulation, "age"), [Year(40), Year(39)], absolute_error_margin = 0)
 
 # Redo the previous simulation using the add_member helper function.
 simulation = Simulation(tax_benefit_system, YearPeriod(2013))
@@ -196,7 +196,7 @@ individu = get_entity(simulation, "individu")
 add_member(famille)
 add_member(individu, age_en_mois = Month(40 * 12 + 11), role_dans_famille = PARENT1)
 add_member(individu, age_en_mois = Month(39 * 12), role_dans_famille = PARENT2)
-assert_near(calculate(simulation, "age"), [Year(40), Year(39)], error_margin = 0)
+assert_near(calculate(simulation, "age"), [Year(40), Year(39)], absolute_error_margin = 0)
 
 
 function check_revenu_disponible(year, depcom, expected_revenu_disponible)
@@ -210,7 +210,7 @@ function check_revenu_disponible(year, depcom, expected_revenu_disponible)
   set_array(simulation, "id_famille", [1, 1, 2, 2, 3, 3])
   set_array(simulation, "role_dans_famille", [PARENT1, PARENT2, PARENT1, PARENT2, PARENT1, PARENT2])
   set_array(simulation, "salaire_brut", [0.0, 0.0, 50000.0, 0.0, 100000.0, 0.0])
-  assert_near(calculate(simulation, "revenu_disponible"), expected_revenu_disponible)
+  assert_near(calculate(simulation, "revenu_disponible"), expected_revenu_disponible, absolute_error_margin = 1)
 
   # Redo the previous simulation using the add_member helper function.
   simulation = Simulation(tax_benefit_system, YearPeriod(year))
@@ -222,7 +222,7 @@ function check_revenu_disponible(year, depcom, expected_revenu_disponible)
     add_member(individu, role_dans_famille = PARENT1, salaire_brut = salaire_brut[(famille_index - 1) * 2 + 1])
     add_member(individu, role_dans_famille = PARENT2, salaire_brut = salaire_brut[(famille_index - 1) * 2 + 2])
   end
-  assert_near(calculate(simulation, "revenu_disponible"), expected_revenu_disponible)
+  assert_near(calculate(simulation, "revenu_disponible"), expected_revenu_disponible, absolute_error_margin = 1)
 end
 
 

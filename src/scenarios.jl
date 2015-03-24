@@ -162,11 +162,12 @@ function to_input_variables(tax_benefit_system::TaxBenefitSystem, period::DatePe
         if convertible.error !== nothing || convertible.value === nothing
           return convertible
         end
-        error_by_variable_name = (String => Any)[]
-        input_by_variable_name = (String => Any)[]
+        error_by_variable_name = OrderedDict{String, Any}()
+        input_by_variable_name = OrderedDict{String, Any}()
         for (variable_name, value) in convertible.value
           variable_definition = variable_definition_by_name[variable_name]
-          converted_variable = Convertible(value, convertible.context) |> to_array(variable_definition, period)
+          converted_variable = Convertible(value, convertible.context) |> to_array_by_period(variable_definition,
+            period)
           if converted_variable.value !== nothing
             input_by_variable_name[variable_name] = converted_variable.value
           end
@@ -190,15 +191,12 @@ function to_input_variables(tax_benefit_system::TaxBenefitSystem, period::DatePe
       entity_definition = variable_definition.entity_definition
       entity_count = get(count_by_entity_definition, entity_definition, 0)
       for (variable_period, variable_array) in array_by_period
-        entity_count = get(count_by_entity_definition, entity_definition, 0)
         if entity_count == 0
           count_by_entity_definition[entity_definition] = entity_count = length(variable_array)
-        else
-          if length(variable_array) != entity_count
-            errors[variable_definition.name] = context -> _(context,
-              "Array has not the same length as other variables of entity $(entity_definition.name):" *
-              " $(length(variable_array)) instead of $entity_count.")
-          end
+        elseif length(variable_array) != entity_count
+          errors[variable_definition.name] = context -> _(context,
+            "Array has not the same length as other variables of entity $(entity_definition.name):" *
+            " $(length(variable_array)) instead of $entity_count.")
         end
       end
     end
@@ -266,24 +264,6 @@ function to_scenario(tax_benefit_system::TaxBenefitSystem; repair = false)
     end
 
     if data["axes"] !== nothing
-      if data["input_variables"] !== nothing
-        count_by_entity_name_plural = (String => Int)[]
-        for (variable_name, array_by_period) in data["input_variables"]
-          first_period, first_array = first(array_by_period)
-          variable_definition = variable_definition_by_name[variable_name]
-          entity_definition = variable_definition.entity_definition
-          entity_name_plural = entity_definition.name_plural
-          get!(count_by_entity_name_plural, entity_name_plural, length(first_array))
-        end
-      elseif data["test_case"] !== nothing
-        count_by_entity_name_plural = (String => Int)[
-          entity_name_plural => length(entity_members)
-          for (entity_name_plural, entity_members) in data["test_case"]
-        ]
-      else
-        count_by_entity_name_plural = (String => Int)[]
-      end
-
       for (parallel_axes_index, parallel_axes) in enumerate(data["axes"])
         first_axis = parallel_axes[1]
         axis_count = first_axis["count"]
@@ -297,7 +277,7 @@ function to_scenario(tax_benefit_system::TaxBenefitSystem; repair = false)
             axis_errors["max"] = N_("Max value must be greater than min value.")
           end
           variable_definition = variable_definition_by_name[axis["name"]]
-          entity_count = get(count_by_entity_name_plural, variable_definition.entity_definition.name_plural, 0)
+          entity_count = length(data["test_case"][variable_definition.entity_definition.name_plural])
           if axis["index"] > entity_count
             axes_errors = get!(() -> (Unsigned => Any)[], errors, "axes")
             parallel_axes_errors = get!(() -> (Unsigned => Any)[], axes_errors, parallel_axes_index)
@@ -326,9 +306,9 @@ function to_scenario(tax_benefit_system::TaxBenefitSystem; repair = false)
           end
         end
       end
-    end
-    if !isempty(errors)
-      return Convertible(data, convertible.context, errors)
+      if !isempty(errors)
+        return Convertible(data, convertible.context, errors)
+      end
     end
 
     scenario = data["test_case"] === nothing ?

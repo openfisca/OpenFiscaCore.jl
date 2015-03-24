@@ -25,23 +25,38 @@
 .-(left::Array{Date}, right::Date) = Day[left_item - right for left_item in left]
 
 
+abs(array::Array{Day}) = array
+
+abs(array::Array{Month}) = array
+
+abs(array::Array{Year}) = array
+
+abs(array::Array) = [abs(item) for item in array]
+
+
 isless(left::Date, right::Array{Date}) = Bool[isless(left, right_item) for right_item in right]
 
 isless(left::Array{Date}, right::Date) = Bool[isless(left_item, right) for left_item in left]
 
 
-function assert_near(value::Union(Array, Number), target_value::Union(Array, Number); error_margin = 1, message = "")
-  if error_margin <= 0
-    @assert(all(target_value .== value), "$message$value differs from $target_value")
-  else
-    @assert(all(target_value .- error_margin .< value) && all(value .< target_value .+ error_margin),
-      "$message$value differs from $target_value with a margin $(abs(value .- target_value)) .>= $error_margin")
+function assert_near(value::Union(Array, Number), target_value::Union(Array, Number); absolute_error_margin = 0,
+    message = "", relative_error_margin = -1)
+  @assert absolute_error_margin >= 0 || relative_error_margin >= 0
+  if absolute_error_margin >= 0
+    @assert(all(abs(target_value .- value) .<= absolute_error_margin),
+      "$message$value differs from $target_value with an absolute margin $(abs(target_value .- value)) .>" *
+      " $absolute_error_margin")
+  end
+  if relative_error_margin >= 0
+    @assert(all(abs(target_value .- value) .<= abs(relative_error_margin .* target_value)),
+      "$message$value differs from $target_value with a relative margin $(abs(target_value .- value)) .>" *
+      " $(abs(relative_error_margin .* target_value))")
   end
 end
 
 function assert_near(value::Union(Array{Bool}, BitArray, Bool), target_value::Union(Array{Bool}, BitArray, Bool);
-    error_margin = 0, message = "")
-  # Note: Ignore error_margin when comparing booleans.
+    absolute_error_margin = 0, message = "", relative_error_margin = -1)
+  # Note: Ignore error margin when comparing booleans.
   @assert(all(target_value .== value), "$message$value differs from $target_value")
 end
 
