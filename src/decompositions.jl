@@ -23,34 +23,50 @@
 abstract AbstractDecompositionNode
 
 
-typealias DecompositionNodeChild Union(AbstractDecompositionNode, VariableDefinition)
+immutable Color
+  red::Integer
+  green::Integer
+  blue::Integer
+  function Color(red::Integer, green::Integer, blue::Integer)
+    if 0 > red > 255 || 0 > green > 255 || 0 > blue > 255
+      error("Arguments must be between 0 and 255")
+    end
+    return new(red, green, blue)
+  end
+end
 
 
 immutable DecompositionNode <: AbstractDecompositionNode
   name::String
   label::String
   short_label::String
-  children::Array{DecompositionNodeChild}
+  color::Color
+  children::Union(Array{DecompositionNode}, Nothing)
+  variable_definition::Union(VariableDefinition, Nothing)
 end
 
 
-visit_decomposition(tax_benefit_system::TaxBenefitSystem, variable_name::String) =
-  tax_benefit_system.variable_definition_by_name[variable_name]
+visit_decomposition(
+  tax_benefit_system::TaxBenefitSystem, variable_name::String, label::String, short_label::String, color::Color
+) = DecompositionNode(
+  variable_name, label, short_label, color, nothing, tax_benefit_system.variable_definition_by_name[variable_name]
+)
 
-visit_decomposition(tax_benefit_system::TaxBenefitSystem, name::Symbol) =
-  visit_decomposition(tax_benefit_system, string(name))
+visit_decomposition(
+  tax_benefit_system::TaxBenefitSystem, variable_name::Symbol, label::String, short_label::String, color::Expr
+) = visit_decomposition(
+  tax_benefit_system, string(variable_name), label, short_label, Color(color.args...)
+)
 
 visit_decomposition(tax_benefit_system::TaxBenefitSystem, name::String, label::String, short_label::String,
-  children::Array{DecompositionNodeChild}) = DecompositionNode(name, label, short_label, children)
+  color::Color, children::Array{DecompositionNode}) = DecompositionNode(name, label, short_label, color, children, nothing)
 
 function visit_decomposition(tax_benefit_system::TaxBenefitSystem, name::Symbol, label::String, short_label::String,
-    children::Expr)
+    color::Expr, children::Expr)
   @assert children.head in [:hcat, :row, :vcat]
-  children_nodes::Array{DecompositionNodeChild} = map(
-    arg -> isa(arg, Symbol) ?
-      visit_decomposition(tax_benefit_system, arg) :
-      visit_decomposition(tax_benefit_system, arg.args...),
-    children.args
+  children_nodes::Array{DecompositionNode} = map(
+    arg -> visit_decomposition(tax_benefit_system, arg.args...),
+    children.args,
   )
-  visit_decomposition(tax_benefit_system, string(name), label, short_label, children_nodes)
+  visit_decomposition(tax_benefit_system, string(name), label, short_label, Color(color.args...), children_nodes)
 end
