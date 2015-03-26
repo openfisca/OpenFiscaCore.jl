@@ -23,15 +23,25 @@
 type EntityDefinition
   name::String
   name_plural::String
-  each_person_id_and_role # Optional function that returns an iterator of each ID & role of a JSON member.
-     # Not used for persons
+  label::String
+  label_plural::String
+  name_key::String
+  each_person_id_and_role::Union(Function, Nothing)  # Optional function that returns an iterator of each ID & role
+    # of a JSON member. Not used for persons.
   index_variable_name::String  # Not used for persons
   is_person::Bool
+  label_by_role_name::Dict{String, String}  # Not used for persons
+  max_persons_by_role_name::Dict{String, Unsigned}  # Not used for persons
+  roles_name::Array{String}  # Not used for persons
   role_variable_name::String  # Not used for persons
 
-  EntityDefinition(name, name_plural; each_person_id_and_role = nothing, is_person = false, index_variable_name = "",
-    role_variable_name = ""
-  ) = new(name, name_plural, each_person_id_and_role, index_variable_name, is_person, role_variable_name)
+  # TODO label and label_plural must be keywords, with name and name_plural as default value
+  EntityDefinition(name, name_plural, label, label_plural, name_key; each_person_id_and_role = nothing,
+    is_person = false, index_variable_name = "", label_by_role_name = (String => (String, String))[],
+    max_persons_by_role_name = (String => Unsigned)[], roles_name = String[], role_variable_name = ""
+  ) = new(name, name_plural, label, label_plural, name_key, each_person_id_and_role, index_variable_name, is_person,
+    label_by_role_name, max_persons_by_role_name, roles_name, role_variable_name
+  )
 end
 
 
