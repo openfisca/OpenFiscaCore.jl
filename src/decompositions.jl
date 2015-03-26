@@ -24,15 +24,9 @@ abstract AbstractDecompositionNode
 
 
 immutable Color
-  red::Integer
-  green::Integer
-  blue::Integer
-  function Color(red::Integer, green::Integer, blue::Integer)
-    if 0 > red > 255 || 0 > green > 255 || 0 > blue > 255
-      error("Arguments must be between 0 and 255")
-    end
-    return new(red, green, blue)
-  end
+  red::Uint8
+  green::Uint8
+  blue::Uint8
 end
 
 
