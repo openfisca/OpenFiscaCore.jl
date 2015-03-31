@@ -268,7 +268,7 @@ function to_scenario(tax_benefit_system::TaxBenefitSystem; repair = false)
         first_axis = parallel_axes[1]
         axis_count = first_axis["count"]
         axis_entity_definition = variable_definition_by_name[first_axis["name"]].entity_definition
-        axis_period = first_axis["period"]
+        first_axis_period = first_axis["period"] === nothing ? data["period"] : first_axis["period"]
         for (axis_index, axis) in enumerate(parallel_axes)
           if axis["min"] >= axis["max"]
             axes_errors = get!(() -> (Unsigned => Any)[], errors, "axes")
@@ -297,11 +297,17 @@ function to_scenario(tax_benefit_system::TaxBenefitSystem; repair = false)
               axis_errors = get!(() -> (String => Any)[], parallel_axes_errors, axes_index)
               axis_errors["name"] = N_("Parallel indexes must belong to the same entity.")
             end
-            if axis["period"] != axis_period
+            axis_period = axis["period"] === nothing ? data["period"] : axis["period"]
+            if typeof(axis_period) != typeof(first_axis_period)
               axes_errors = get!(() -> (Unsigned => Any)[], errors, "axes")
               parallel_axes_errors = get!(() -> (Unsigned => Any)[], axes_errors, parallel_axes_index)
               axis_errors = get!(() -> (String => Any)[], parallel_axes_errors, axes_index)
-              axis_errors["period"] = N_("Parallel indexes must have the same period.")
+              axis_errors["period"] = N_("Parallel indexes must have the same period unit.")
+            elseif axis_period.length != first_axis_period.length
+              axes_errors = get!(() -> (Unsigned => Any)[], errors, "axes")
+              parallel_axes_errors = get!(() -> (Unsigned => Any)[], axes_errors, parallel_axes_index)
+              axis_errors = get!(() -> (String => Any)[], parallel_axes_errors, axes_index)
+              axis_errors["period"] = N_("Parallel indexes must have the same period length.")
             end
           end
         end

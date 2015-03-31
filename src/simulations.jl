@@ -286,14 +286,14 @@ function fill!(simulation::Simulation, scenario::TestCaseScenario)
   if scenario.axes !== nothing
     if length(scenario.axes) == 1
       parallel_axes = scenario.axes[1]
-      # All parallel axes have the same count, entity and period.
+      # All parallel axes have the same count and entity.
       first_axis = parallel_axes[1]
       axis_count = first_axis["count"]
       axis_variable = get_variable!(simulation, first_axis["name"])
       axis_entity = get_entity(axis_variable)
       axis_entity_plural = axis_entity.definition.name_plural
-      axis_period = first_axis["period"] === nothing ? simulation.period : first_axis["period"]
       for axis in parallel_axes
+        axis_period = axis["period"] === nothing ? simulation.period : axis["period"]
         axis_variable = get_variable!(simulation, axis["name"])
         axis_array = get_array!(axis_variable, axis_period) do
           return default_array(axis_variable)
@@ -303,10 +303,11 @@ function fill!(simulation::Simulation, scenario::TestCaseScenario)
           axis_values = map(x -> round(Integer, x), axis_values)
         end
         axis_array[axis["index"] + 1:length(test_case[axis_entity_plural]):end] = axis_values
+        # TODO: set_input(...).
       end
     else
       for (parallel_axes_index, parallel_axes) in enumerate(scenario.axes)
-        # All parallel axes have the same count, entity and period.
+        # All parallel axes have the same count and entity.
         first_axis = parallel_axes[1]
         axis_count = first_axis["count"]
 
@@ -328,14 +329,15 @@ function fill!(simulation::Simulation, scenario::TestCaseScenario)
         axis_variable = get_variable!(simulation, first_axis["name"])
         axis_entity = get_entity(axis_variable)
         axis_entity_plural = axis_entity.definition.name_plural
-        axis_period = first_axis["period"] === nothing ? simulation.period : first_axis["period"]
         for axis in parallel_axes
+          axis_period = axis["period"] === nothing ? simulation.period : axis["period"]
           axis_variable = get_variable!(simulation, axis["name"])
           axis_array = get_array!(axis_variable, axis_period) do
             return default_array(axis_variable)
           end
           axis_array[axis["index"] + 1:length(test_case[axis_entity_plural]):end] = axis["min"] +
             mesh_vector * (axis["max"] - axis["min"]) / (axis_count - 1)
+          # TODO: set_input(...).
         end
       end
     end
