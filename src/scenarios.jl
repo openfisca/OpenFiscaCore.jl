@@ -50,7 +50,7 @@ function cleanup_period_item(convertible::Convertible)
   value = (String => Any)[
     item_name => item_value
     for (item_name, item_value) in convertible.value
-    ]
+  ]
   if !haskey(value, "period")
     date = pop!(value, "date", nothing)
     if date === nothing
