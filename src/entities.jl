@@ -35,7 +35,7 @@ type EntityDefinition
   role_variable_name::String  # Not used for persons
 
   EntityDefinition(name, name_plural; each_person_id_and_role = nothing,
-    is_person = false, index_variable_name = "", label = "", label_plural = "",
+    is_person = false, index_variable_name = "", label = name, label_plural = name_plural,
     label_by_role_name = (String => (String, String))[],
     max_persons_by_role_name = (String => Unsigned)[], roles_name = String[], role_variable_name = ""
   ) = new(name, name_plural, each_person_id_and_role, index_variable_name, is_person,
